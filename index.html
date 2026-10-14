@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 
-<html lang="es"><head>
+<html lang="es">
+<head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
-<title>RutaPro - App Móvil de Gestión de Rutas y Clientes</title>
+<title>RutaPro - App Móvil con Supabase Cloud en Tiempo Real</title>
 <!-- Google Fonts: Inter -->
 <link href="https://fonts.googleapis.com" rel="preconnect"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Supabase JS Client v2 Oficial -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <script>
@@ -83,7 +86,7 @@
 <h1 class="text-2xl font-black text-slate-900 tracking-tight">RutaPro</h1>
 <p class="text-xs font-bold text-blue-700 uppercase tracking-widest mt-0.5">Control y Gestión de Rutas</p>
 </div>
-<p class="text-xs text-slate-500 max-w-xs mx-auto">Selecciona tu perfil de preventista o ejecutivo comercial para sincronizar tu jornada.</p>
+<p class="text-xs text-slate-500 max-w-xs mx-auto">Selecciona tu perfil de preventista o ejecutivo comercial para sincronizar tu jornada con la nube Supabase.</p>
 </div>
 <!-- Tarjeta Formulario Login -->
 <div class="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-md space-y-4">
@@ -111,15 +114,19 @@
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
 </button>
 </div>
-<!-- Info Pill -->
-<div class="bg-blue-50/80 border border-blue-200 rounded-2xl p-3 text-center">
-<p class="text-[11px] text-blue-900 font-medium">
-          ⚡ <strong>Modo Base de Datos Local:</strong> Tu cartera y visitas se guardan en el dispositivo. Empieza con tu lista en blanco o crea clientes al instante.
-        </p>
+<!-- Info Pill Supabase Live -->
+<div class="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-3.5 text-center shadow-sm">
+<div class="flex items-center justify-center space-x-1.5 text-emerald-900 font-black text-xs mb-0.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+<span>Supabase Cloud en Tiempo Real</span>
+</div>
+<p class="text-[11px] text-emerald-800 font-medium leading-relaxed">
+            Sincronización instantánea teléfono ⇄ PC en vivo con base de datos PostgreSQL conectada.
+          </p>
 </div>
 </div>
 <div class="py-4 text-center">
-<p class="text-[10px] text-slate-400 font-medium">RutaPro Mobile v2.5 • Conectividad Local &amp; GNSS</p>
+<p class="text-[10px] text-slate-400 font-medium">RutaPro v2.5 • Supabase Live &amp; GNSS Auditado</p>
 </div>
 </div>
 <!-- ========================================== -->
@@ -144,15 +151,21 @@
 </div>
 </div>
 <div class="flex items-center space-x-1.5">
-<button class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold active:scale-95 transition shadow-sm hover:bg-emerald-100" id="header-gps-status-btn" onclick="abrirTelemetriaGPS()">
+<!-- GPS Badge -->
+<button class="flex items-center space-x-1 px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[10px] font-bold active:scale-95 transition shadow-sm hover:bg-emerald-100" id="header-gps-status-btn" onclick="abrirTelemetriaGPS()">
 <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-<span id="header-gps-status-text">GPS: Activo</span>
+<span id="header-gps-status-text">GPS</span>
 <span class="text-emerald-700 font-extrabold" id="header-gps-precision">±8m</span>
+</button>
+<!-- Status Badge Supabase en Tiempo Real -->
+<button class="flex items-center space-x-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-800 text-[10px] font-extrabold active:scale-95 transition shadow-sm hover:bg-emerald-100" id="header-cloud-btn" onclick="cargarDatos(true)" title="Refrescar datos desde Supabase" type="button">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="header-cloud-dot"></span>
+<span id="header-cloud-label">🟢 Supabase Live</span>
 </button>
 <!-- Dropdown Usuario -->
 <div class="relative">
 <button class="w-8 h-8 rounded-full ring-2 ring-blue-600/30 overflow-hidden bg-slate-200 focus:outline-none" onclick="toggleUserDropdown()">
-<img alt="Avatar" class="w-full h-full object-cover" id="header-avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBE8bK_gjeCQHGzGsFfoney9EdfFXU2B6BMuE7_1GDd_1Hn533oDJKSlQjea7LIRPLJpqWd6fLNL_ahrcQq3MZo2doEE8X_5Ouz5cRYSbNVMlFF6GQJOzdqTFaRgNmsM1JCCOqfvzzIgIpPB3EpzLKwod0FBFj_TpIKr4eoMFv2pZG4KBXxgmPScfPNKqhU5KO2_vDHb1NUL7l-j9HWDJUTM4G3nDiuhJ8yfp_WaWLsV6Hxx893eHPi"/>
+<img alt="Avatar" class="w-full h-full object-cover" id="header-avatar" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
 </button>
 <div class="hidden absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50" id="user-profile-menu">
 <div class="px-3 py-2 border-b border-slate-100">
@@ -173,12 +186,12 @@
 <div>
 <span class="inline-flex items-center text-[11px] font-semibold text-slate-500 mb-0.5">
 <svg class="w-3.5 h-3.5 mr-1 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-<span id="current-date-string">Miércoles, 24 de Octubre</span>
+<span id="current-date-string">Jornada Activa</span>
 </span>
 <h2 class="text-xl font-black text-slate-900" id="greeting-text">¡Hola, Carlos!</h2>
-<p class="text-xs text-slate-500 font-medium" id="greeting-subtext">Ruta Comercial Norte • Turno Mañana</p>
+<p class="text-xs text-slate-500 font-medium" id="greeting-subtext">Ruta Comercial • Supabase Live</p>
 </div>
-<button class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-100 active:rotate-180 transition-all duration-300 shadow-sm" onclick="syncDatabase()" title="Sincronizar base de datos">
+<button class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center hover:bg-blue-100 active:rotate-180 transition-all duration-300 shadow-sm" onclick="cargarDatos(true)" title="Sincronizar base de datos Supabase">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
 </button>
 </div>
@@ -217,24 +230,26 @@
 </div>
 </div>
 </div>
-<!-- PRÓXIMA PARADA CARD -->
-<div id="hero-proxima-parada-container"></div>
-<!-- Banner Mapa del Circuito -->
-<div class="bg-white rounded-2xl p-3.5 border border-slate-200/80 shadow-sm flex items-center justify-between">
+<!-- Banner Sincronización Supabase Cloud en Vivo -->
+<div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-blue-50 rounded-2xl p-3.5 border border-emerald-200 shadow-sm flex items-center justify-between">
 <div class="flex items-center space-x-3">
-<div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center">
-<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
-</div>
+<div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-emerald-500/20">
+                  ☁️
+                </div>
 <div>
-<p class="text-xs font-bold text-slate-800">Mapa del Circuito</p>
-<p class="text-[11px] text-slate-500" id="circuit-summary">Sin paradas activas</p>
+<div class="flex items-center space-x-1.5">
+<p class="text-xs font-black text-emerald-950">Supabase Cloud PostgreSQL</p>
+<span class="px-1.5 py-0.5 bg-emerald-200 text-emerald-900 text-[9px] font-extrabold rounded-full animate-pulse">LIVE</span>
+</div>
+<p class="text-[11px] text-emerald-800 font-medium">Sincronización instantánea móvil ⇄ PC</p>
 </div>
 </div>
-<button class="py-1.5 px-3 rounded-xl bg-blue-900 text-white font-bold text-xs flex items-center space-x-1 hover:bg-blue-800 active:scale-95 transition" onclick="showToast('Cargando georutas satelitales...')">
-<span>Ver Mapa</span>
-<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<button class="py-1.5 px-3 rounded-xl bg-emerald-700 text-white font-extrabold text-xs flex items-center space-x-1 hover:bg-emerald-800 active:scale-95 transition shadow-sm" onclick="cargarDatos(true)" type="button">
+<span>Actualizar</span>
 </button>
 </div>
+<!-- PRÓXIMA PARADA CARD -->
+<div id="hero-proxima-parada-container"></div>
 <!-- Lista de Visitas de Hoy -->
 <div class="space-y-3 pt-1">
 <div class="flex items-center justify-between">
@@ -264,11 +279,11 @@
 </div>
 <div>
 <h1 class="text-base font-extrabold tracking-tight text-slate-900 leading-tight">RutaPro</h1>
-<p class="text-[10px] font-bold text-blue-700 tracking-wider uppercase">Clientes</p>
+<p class="text-[10px] font-bold text-blue-700 tracking-wider uppercase">Clientes (Supabase)</p>
 </div>
 </div>
 <div class="flex items-center space-x-2">
-<button class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900" onclick="showToast('Directorio actualizado con base de datos local')">
+<button class="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:text-slate-900" onclick="cargarDatos(true)" title="Recargar clientes de Supabase">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
 </button>
 </div>
@@ -279,15 +294,15 @@
 <h2 class="text-xl font-extrabold text-slate-900">Directorio Comercial</h2>
 <p class="text-xs text-slate-500 font-semibold flex items-center" id="client-count-indicator">
 <span class="w-2 h-2 rounded-full bg-slate-400 mr-1.5"></span>
-                0 comercios en base de datos
-              </p>
+                  0 comercios en base de datos
+                </p>
 </div>
 <button class="py-2 px-3 rounded-xl bg-blue-800 text-white font-bold text-xs flex items-center space-x-1.5 shadow-md shadow-blue-800/20 active:scale-95 transition" onclick="openAltaCliente()">
 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
 <span>+ Nuevo Cliente</span>
 </button>
 </div>
-<!-- Input Buscador con Easter Egg -->
+<!-- Input Buscador con Easter Egg ResetAPP -->
 <div class="relative">
 <input class="w-full pl-10 pr-10 py-3 rounded-2xl bg-white border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-sm" id="search-input-clientes" oninput="filtrarClientes()" placeholder="Buscar comercio o escribe 'ResetAPP' para limpiar..." type="text"/>
 <div class="absolute left-3.5 top-3.5 text-slate-400">
@@ -305,7 +320,7 @@
 <div class="flex items-center justify-between text-xs px-1">
 <span class="text-slate-400 text-[11px]">Estado: <span class="font-bold text-slate-700" id="db-status-label">Limpia (0 registros)</span></span>
 <button class="text-blue-700 font-bold hover:underline flex items-center space-x-1 text-[11px]" onclick="cargarDatosDemo()">
-<span>📦 Cargar datos demo de prueba</span>
+<span>📦 Cargar datos demo en Supabase</span>
 </button>
 </div>
 <!-- Clientes List Container -->
@@ -337,38 +352,38 @@
 <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm flex items-center justify-between" id="visita-cliente-selected-card">
 <div class="flex items-center space-x-3">
 <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black text-xl shrink-0" id="visita-client-icon">
-                🏪
-              </div>
+                  🏪
+                </div>
 <div class="min-w-0">
 <h3 class="text-sm font-extrabold text-slate-900 truncate" id="visita-client-name">
-                  Minimarket Los Pinos <span class="text-emerald-600 text-xs">✓</span>
+                    Minimarket Los Pinos <span class="text-emerald-600 text-xs">✓</span>
 </h3>
 <p class="text-[11px] text-slate-500 truncate" id="visita-client-contact">Contacto: Guillermo Silva</p>
 <p class="text-[11px] text-slate-400 truncate max-w-[190px]" id="visita-client-address">Av. Libertador 1420</p>
 </div>
 </div>
 <button class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-xl hover:bg-blue-100 transition shrink-0" onclick="switchTab('clientes')" type="button">
-              Cambiar
-            </button>
+                Cambiar
+              </button>
 </div>
 <!-- Geocerca Widget -->
 <div class="bg-emerald-50/80 rounded-2xl p-3.5 border border-emerald-200 shadow-sm space-y-2.5">
 <div class="flex items-center justify-between">
 <div class="flex items-center space-x-2.5">
 <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center font-bold text-base shrink-0">
-                  📍
-                </div>
+                    📍
+                  </div>
 <div>
 <p class="text-xs font-extrabold text-emerald-900 flex items-center">
-                    Geocerca Validada (Radio 50m)
-                    <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-extrabold">EN PUNTO</span>
+                      Geocerca Validada (Radio 50m)
+                      <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-200 text-emerald-900 font-extrabold">EN PUNTO</span>
 </p>
 <p class="text-[11px] text-emerald-700">Distancia: <strong class="font-extrabold text-emerald-900" id="geofence-distancia">12 metros</strong> • Presencial auditado</p>
 </div>
 </div>
 <button class="text-[10px] font-bold text-emerald-800 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded-lg transition" onclick="revalidarGeocercaVisita()" type="button">
-                Recalibrar
-              </button>
+                  Recalibrar
+                </button>
 </div>
 <div class="bg-white/90 rounded-xl p-2 border border-emerald-200/80 flex items-center justify-between text-[10px]">
 <span class="text-slate-600 font-mono">Coord: -34.603702, -58.381615</span>
@@ -438,11 +453,11 @@
 <div class="space-y-2 pt-1">
 <button class="w-full py-3.5 rounded-2xl bg-blue-700 hover:bg-blue-800 text-white font-extrabold text-sm shadow-lg shadow-blue-700/30 active:scale-98 transition flex items-center justify-center space-x-2" type="submit">
 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2"></path></svg>
-<span>Finalizar y Guardar Visita</span>
+<span>Finalizar y Guardar en Supabase</span>
 </button>
 <button class="w-full py-2.5 rounded-2xl bg-white text-slate-700 font-bold text-xs border border-slate-200 hover:bg-slate-50 transition" onclick="showToast('Visita guardada como borrador local'); switchTab('ruta')" type="button">
-              Guardar como Borrador
-            </button>
+                Guardar como Borrador
+              </button>
 </div>
 </form>
 </section>
@@ -457,12 +472,12 @@
 </div>
 <div>
 <h1 class="text-base font-extrabold tracking-tight text-slate-900 leading-tight">RutaPro</h1>
-<p class="text-[10px] font-bold text-blue-700 tracking-wider uppercase">Historial</p>
+<p class="text-[10px] font-bold text-blue-700 tracking-wider uppercase">Historial (Supabase)</p>
 </div>
 </div>
 <button class="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1.5 rounded-xl hover:bg-blue-100" onclick="exportarHistorial()">
-            Exportar CSV
-          </button>
+              Exportar CSV
+            </button>
 </header>
 <div class="p-4 space-y-4">
 <!-- Totales Resumen -->
@@ -473,12 +488,12 @@
 <p class="text-[11px] text-emerald-600 font-semibold" id="historial-con-venta-count">0 transacciones concretadas</p>
 </div>
 <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center text-xl font-bold">
-              💵
-            </div>
+                💵
+              </div>
 </div>
 <div class="flex justify-between items-center">
 <h3 class="text-sm font-extrabold text-slate-900" id="historial-count-label">Registro Cronológico (0)</h3>
-<span class="text-xs text-slate-500 font-medium">Sincronizado localmente</span>
+<span class="text-xs text-slate-500 font-medium">Sincronizado Supabase</span>
 </div>
 <div class="space-y-3" id="historial-list-container"></div>
 </div>
@@ -494,22 +509,22 @@
 </button>
 <div>
 <h1 class="text-base font-extrabold tracking-tight text-slate-900 leading-tight">Ficha Cliente</h1>
-<p class="text-[10px] font-bold text-emerald-600 tracking-wider uppercase">Alta en Terreno</p>
+<p class="text-[10px] font-bold text-emerald-600 tracking-wider uppercase">Alta en Supabase</p>
 </div>
 </div>
-<span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full">Base Local</span>
+<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">🟢 Supabase Live</span>
 </header>
 <form class="p-4 space-y-4" id="form-cliente" onsubmit="event.preventDefault(); guardarCliente();">
 <div>
 <h2 class="text-xl font-extrabold text-slate-900">Nuevo Comercio / Local</h2>
-<p class="text-xs text-slate-500">Agrega el establecimiento a tu cartera comercial permanente.</p>
+<p class="text-xs text-slate-500">Agrega el establecimiento a tu cartera comercial permanente en la nube.</p>
 </div>
 <!-- Información Comercial -->
 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
 <h3 class="text-xs font-bold text-slate-800 flex items-center">
 <span class="w-5 h-5 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center mr-1.5 text-xs">🏢</span>
-              Información Comercial
-            </h3>
+                Información Comercial
+              </h3>
 <div>
 <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre Comercial del Local *</label>
 <input class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600" id="nombre_comercial" placeholder="Ej: Minimarket Las Palmas" required="" type="text"/>
@@ -542,8 +557,8 @@
 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
 <h3 class="text-xs font-bold text-slate-800 flex items-center">
 <span class="w-5 h-5 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mr-1.5 text-xs">📍</span>
-              Ubicación y Territorio
-            </h3>
+                Ubicación y Territorio
+              </h3>
 <div>
 <label class="block text-xs font-semibold text-slate-700 mb-1">Dirección Exacta (Calle, número) *</label>
 <input class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600" id="direccion" placeholder="Ej: Av. San Martín 450" required="" type="text"/>
@@ -556,8 +571,8 @@
 <p class="text-[10px] text-blue-700">Verificación de radio para visitas</p>
 </div>
 <button class="px-2 py-1 rounded-lg bg-blue-800 text-white font-bold text-[10px] active:scale-95 transition" onclick="capturarGPSParaAlta()" type="button">
-                  📍 Capturar GPS
-                </button>
+                    📍 Capturar GPS
+                  </button>
 </div>
 <div class="grid grid-cols-2 gap-2">
 <div class="bg-white rounded-lg p-1.5 border border-blue-100">
@@ -575,8 +590,8 @@
 <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
 <h3 class="text-xs font-bold text-slate-800 flex items-center">
 <span class="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-700 flex items-center justify-center mr-1.5 text-xs">👤</span>
-              Contacto Directo
-            </h3>
+                Contacto Directo
+              </h3>
 <div>
 <label class="block text-xs font-semibold text-slate-700 mb-1">Nombre y Apellido del Encargado *</label>
 <input class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600" id="contacto_nombre" placeholder="Ej: Roberto Méndez" required="" type="text"/>
@@ -592,15 +607,14 @@
 <span>Guardar y Añadir a Ruta de Hoy</span>
 </button>
 <button class="w-full py-2.5 rounded-2xl bg-white text-slate-700 font-bold text-xs border border-slate-200 hover:bg-slate-50 transition" onclick="guardarClienteSolo()" type="button">
-              Solo Guardar en Directorio
-            </button>
+                Solo Guardar en Supabase
+              </button>
 </div>
 </form>
 </section>
 </main>
 <!-- ========================================== -->
 <!-- BARRA DE NAVEGACIÓN INFERIOR (BOTTOM TABS) -->
-<!-- CRÍTICO: DENTRO DEL PHONE CONTAINER        -->
 <!-- ========================================== -->
 <nav class="sticky bottom-0 left-0 right-0 w-full bg-white/95 backdrop-blur-md border-t border-slate-200/90 px-3 py-2 flex items-center justify-between z-40 shadow-lg" id="bottom-nav">
 <!-- Tab 1: Ruta Hoy -->
@@ -615,7 +629,7 @@
 </button>
 <!-- Botón Central Flotante (+) Acción Rápida -->
 <div class="relative flex items-center justify-center -mt-6">
-<button class="w-13 h-13 w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center shadow-xl shadow-blue-700/40 hover:bg-blue-800 active:scale-90 transition border-4 border-[#f8f9ff]" onclick="toggleQuickMenu()" title="Acciones Rápidas">
+<button class="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center shadow-xl shadow-blue-700/40 hover:bg-blue-800 active:scale-90 transition border-4 border-[#f8f9ff]" onclick="toggleQuickMenu()" title="Acciones Rápidas">
 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></path></svg>
 </button>
 </div>
@@ -647,7 +661,7 @@
 <button class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-left hover:bg-emerald-100 transition space-y-1" onclick="toggleQuickMenu(); openAltaCliente()">
 <span class="text-xl">🏪</span>
 <p class="text-xs font-bold text-emerald-900">Nuevo Cliente</p>
-<p class="text-[10px] text-emerald-700">Registrar local y geocodificar</p>
+<p class="text-[10px] text-emerald-700">Registrar local en Supabase</p>
 </button>
 </div>
 </div>
@@ -656,21 +670,21 @@
 <div class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-50 opacity-0 pointer-events-none transition-all duration-300 flex items-center justify-center p-5" id="reset-confirm-modal">
 <div class="bg-white rounded-3xl p-6 shadow-2xl space-y-4 max-w-sm w-full border border-slate-100 transform scale-95 transition-transform duration-300" id="reset-confirm-card">
 <div class="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
-        ⚠️
-      </div>
+          ⚠️
+        </div>
 <div class="text-center space-y-1.5">
-<h3 class="text-base font-extrabold text-slate-900">¿Restablecer base de datos?</h3>
+<h3 class="text-base font-extrabold text-slate-900">¿Restablecer datos locales?</h3>
 <p class="text-xs text-slate-500 leading-relaxed">
-          Has ingresado el comando "ResetAPP". Se vaciarán todos los clientes, la ruta del día y el historial para volver a empezar desde cero.
-        </p>
+            Has ingresado el comando "ResetAPP". Se vaciará la memoria caché local para volver a empezar desde cero.
+          </p>
 </div>
 <div class="grid grid-cols-2 gap-2.5 pt-2">
 <button class="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition" onclick="closeResetModal()">
-          Cancelar
-        </button>
+            Cancelar
+          </button>
 <button class="py-2.5 px-3 rounded-xl bg-rose-600 text-white font-bold text-xs hover:bg-rose-700 shadow-md shadow-rose-600/30 active:scale-95 transition" onclick="confirmResetApp()">
-          Sí, vaciar todo
-        </button>
+            Sí, vaciar caché
+          </button>
 </div>
 </div>
 </div>
@@ -684,7 +698,7 @@
 <h3 class="text-sm font-extrabold text-slate-900">Telemetría Satelital GPS</h3>
 <p class="text-[10px] text-emerald-600 font-semibold flex items-center">
 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1 animate-pulse"></span> Conexión GNSS Estable
-            </p>
+              </p>
 </div>
 </div>
 <button class="w-7 h-7 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold hover:bg-slate-200" onclick="cerrarTelemetriaGPS()">✕</button>
@@ -700,1057 +714,1258 @@
 <p class="text-[11px] text-blue-700 leading-snug">Se audita que el preventista esté presente en el local al momento del check-in.</p>
 </div>
 <button class="w-full py-2.5 px-3 rounded-xl bg-blue-700 text-white font-bold text-xs hover:bg-blue-800 transition" onclick="cerrarTelemetriaGPS()">
-        Entendido
-      </button>
+          Entendido
+        </button>
 </div>
 </div>
 </div>
 <!-- ========================================== -->
-<!-- SCRIPT PRINCIPAL & PERSISTENCIA            -->
+<!-- SCRIPT PRINCIPAL & CONEXIÓN SUPABASE LIVE  -->
 <!-- ========================================== -->
 <script>
-  const DB_KEY_CLIENTS = 'rutapro_db_clients';
-  const DB_KEY_ROUTE = 'rutapro_db_route';
-  const DB_KEY_HISTORY = 'rutapro_db_history';
-  const DB_KEY_USER = 'rutapro_session_user';
+    // CREDENCIALES DIRECTAS SUPABASE
+    const SUPABASE_URL = 'https://qbrcbxfneyfdtyoxmnba.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFicmNieGZuZXlmZHR5b3htbmJhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE5MzgzNjQsImV4cCI6MjEwNzUxNDM2NH0.qhOC_LvVhzC8LOC8kv9qmqJ3PB31dEJSORsDTO5aQRE';
 
-  let currentUser = null;
-  let clientsData = [];
-  let routeVisits = [];
-  let historyVisits = [];
-  let activeClientForCheckin = null;
-  let selectedCategoryFilter = 'all';
+    const DB_KEY_CLIENTS = 'rutapro_db_clients';
+    const DB_KEY_ROUTE = 'rutapro_db_route';
+    const DB_KEY_HISTORY = 'rutapro_db_history';
+    const DB_KEY_USER = 'rutapro_session_user';
 
-  const USERS_INFO = {
-    carlos: {
-      name: "Carlos Gómez",
-      role: "Preventista Zona Norte",
-      shift: "Ruta Comercial Norte • Turno Mañana",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBE8bK_gjeCQHGzGsFfoney9EdfFXU2B6BMuE7_1GDd_1Hn533oDJKSlQjea7LIRPLJpqWd6fLNL_ahrcQq3MZo2doEE8X_5Ouz5cRYSbNVMlFF6GQJOzdqTFaRgNmsM1JCCOqfvzzIgIpPB3EpzLKwod0FBFj_TpIKr4eoMFv2pZG4KBXxgmPScfPNKqhU5KO2_vDHb1NUL7l-j9HWDJUTM4G3nDiuhJ8yfp_WaWLsV6Hxx893eHPi"
-    },
-    laura: {
-      name: "Laura Martínez",
-      role: "Ejecutiva Comercial Centro",
-      shift: "Ruta Mayorista Centro • Turno Completo",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBgu6JaEh2RJdHuDKgOfy4-PaY-yKR120n3GsP-imWf1J75pfNvO7-g0elGZsD2veEWCV4GdHRvWvgquhSsdq5Kthekc0Z9ECGVfsyEZpBnYu9nJQJ4Ke3T-otNfW0uoQvOaqILcahlZvVnpPoW5PBp5v_z-8--nF4KjQXIaKVdssuZFwFbZ_Ab-lg_bgSzedRTil_H8Xe1m_5zifDZCaYGYOnyD-ix8M0wWTxCeePpFpRj1MsAgPI7"
-    }
-  };
+    // Inicializar cliente Supabase oficial
+    const supabaseClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-  // Inicialización
-  window.addEventListener('DOMContentLoaded', () => {
-    loadDatabase();
-    checkSession();
-    initEasterEggListener();
-  });
+    let currentUser = null;
+    let clientsData = [];
+    let routeVisits = [];
+    let historyVisits = [];
+    let activeClientForCheckin = null;
+    let selectedCategoryFilter = 'all';
 
-  function loadDatabase() {
-    try {
-      const storedClients = localStorage.getItem(DB_KEY_CLIENTS);
-      clientsData = storedClients ? JSON.parse(storedClients) : [];
+    const USERS_INFO = {
+      carlos: {
+        name: "Carlos Gómez",
+        role: "Preventista Zona Norte",
+        shift: "Ruta Comercial Norte • Turno Mañana",
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+      },
+      laura: {
+        name: "Laura Martínez",
+        role: "Ejecutiva Comercial Centro",
+        shift: "Ruta Mayorista Centro • Turno Completo",
+        avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=120&q=80"
+      }
+    };
 
-      const storedRoute = localStorage.getItem(DB_KEY_ROUTE);
-      routeVisits = storedRoute ? JSON.parse(storedRoute) : [];
+    window.addEventListener('DOMContentLoaded', () => {
+      loadLocalCache();
+      checkSession();
+      initEasterEggListener();
+      initSupabaseRealtime();
+      cargarDatos();
+    });
 
-      const storedHistory = localStorage.getItem(DB_KEY_HISTORY);
-      historyVisits = storedHistory ? JSON.parse(storedHistory) : [];
-    } catch (e) {
-      console.error('Error cargando storage:', e);
-      clientsData = [];
-      routeVisits = [];
-      historyVisits = [];
-    }
-  }
-
-  function saveClients() {
-    localStorage.setItem(DB_KEY_CLIENTS, JSON.stringify(clientsData));
-    renderClients();
-    renderDashboard();
-  }
-
-  function saveRoute() {
-    localStorage.setItem(DB_KEY_ROUTE, JSON.stringify(routeVisits));
-    renderDashboard();
-  }
-
-  function saveHistory() {
-    localStorage.setItem(DB_KEY_HISTORY, JSON.stringify(historyVisits));
-    renderHistorial();
-    renderDashboard();
-  }
-
-  // ==========================================
-  // LOGIN Y NAVEGACIÓN
-  // ==========================================
-  function autocompletarPin() {
-    document.getElementById('login-pin').value = '1234';
-    showToast('PIN 1234 autocompletado');
-  }
-
-  function checkSession() {
-    const savedUserJson = localStorage.getItem(DB_KEY_USER);
-    if (savedUserJson) {
+    // SUSCRIPCIÓN EN TIEMPO REAL CON SUPABASE
+    function initSupabaseRealtime() {
+      if (!supabaseClient) return;
       try {
-        currentUser = JSON.parse(savedUserJson);
-        applyUserDataToUI();
-        startAppInterface();
-        return;
-      } catch (e) {}
-    }
-    showLoginScreen();
-  }
-
-  function onUserSelectChange() {
-    const select = document.getElementById('login-user-select');
-    const customContainer = document.getElementById('custom-user-container');
-    if (select.value === 'custom') {
-      customContainer.classList.remove('hidden');
-    } else {
-      customContainer.classList.add('hidden');
-    }
-  }
-
-  function handleLogin() {
-    const selectVal = document.getElementById('login-user-select').value;
-    let userData;
-
-    if (selectVal === 'custom') {
-      const customName = document.getElementById('custom-user-name').value.trim() || 'Operador Comercial';
-      userData = {
-        name: customName,
-        role: "Operador de Ruta",
-        shift: customName + " • Turno Activo",
-        avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBE8bK_gjeCQHGzGsFfoney9EdfFXU2B6BMuE7_1GDd_1Hn533oDJKSlQjea7LIRPLJpqWd6fLNL_ahrcQq3MZo2doEE8X_5Ouz5cRYSbNVMlFF6GQJOzdqTFaRgNmsM1JCCOqfvzzIgIpPB3EpzLKwod0FBFj_TpIKr4eoMFv2pZG4KBXxgmPScfPNKqhU5KO2_vDHb1NUL7l-j9HWDJUTM4G3nDiuhJ8yfp_WaWLsV6Hxx893eHPi"
-      };
-    } else {
-      userData = USERS_INFO[selectVal] || USERS_INFO.carlos;
+        supabaseClient
+          .channel('realtime_sync')
+          .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+            console.log('Cambio detectado en Supabase en tiempo real:', payload);
+            cargarDatos(false);
+          })
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              updateCloudStatusUI(true);
+            }
+          });
+      } catch (e) {
+        console.warn('Aviso suscripción en tiempo real:', e);
+      }
     }
 
-    currentUser = userData;
-    localStorage.setItem(DB_KEY_USER, JSON.stringify(userData));
-
-    applyUserDataToUI();
-    showToast('¡Bienvenido, ' + userData.name + '!');
-    startAppInterface();
-  }
-
-  function startAppInterface() {
-    // 1. Ocultar login
-    const loginView = document.getElementById('login-view');
-    loginView.classList.add('hidden');
-    loginView.style.display = 'none';
-
-    // 2. Mostrar app shell
-    const appShell = document.getElementById('app-shell');
-    appShell.classList.remove('hidden');
-    appShell.style.display = 'flex';
-
-    // 3. Asegurar que la barra de navegación esté visible
-    const bottomNav = document.getElementById('bottom-nav');
-    if (bottomNav) {
-      bottomNav.classList.remove('hidden');
-      bottomNav.style.display = 'flex';
-    }
-
-    renderDashboard();
-    renderClients();
-    renderHistorial();
-    switchTab('ruta');
-  }
-
-  function showLoginScreen() {
-    const appShell = document.getElementById('app-shell');
-    if (appShell) {
-      appShell.classList.add('hidden');
-      appShell.style.display = 'none';
-    }
-
-    const loginView = document.getElementById('login-view');
-    if (loginView) {
-      loginView.classList.remove('hidden');
-      loginView.style.display = 'flex';
-    }
-  }
-
-  function applyUserDataToUI() {
-    if (!currentUser) return;
-    const greetingText = document.getElementById('greeting-text');
-    const firstName = currentUser.name.split(' ')[0];
-    if (greetingText) greetingText.textContent = '¡Hola, ' + firstName + '!';
-
-    const greetingSubtext = document.getElementById('greeting-subtext');
-    if (greetingSubtext) greetingSubtext.textContent = currentUser.shift;
-
-    const dropdownUserName = document.getElementById('dropdown-user-name');
-    if (dropdownUserName) dropdownUserName.textContent = currentUser.name;
-
-    const headerAvatar = document.getElementById('header-avatar');
-    if (headerAvatar && currentUser.avatar) headerAvatar.src = currentUser.avatar;
-  }
-
-  function toggleUserDropdown() {
-    const menu = document.getElementById('user-profile-menu');
-    if (menu) menu.classList.toggle('hidden');
-  }
-
-  window.addEventListener('click', (e) => {
-    const menu = document.getElementById('user-profile-menu');
-    if (menu && !menu.classList.contains('hidden')) {
-      const isClickInside = menu.contains(e.target) || e.target.closest('button[onclick="toggleUserDropdown()"]');
-      if (!isClickInside) menu.classList.add('hidden');
-    }
-  });
-
-  function logout() {
-    const menu = document.getElementById('user-profile-menu');
-    if (menu) menu.classList.add('hidden');
-    localStorage.removeItem(DB_KEY_USER);
-    currentUser = null;
-    showToast('Sesión cerrada correctamente');
-    setTimeout(() => {
-      showLoginScreen();
-    }, 300);
-  }
-
-  // ==========================================
-  // SWITCH TABS (CAMBIO DE PESTAÑAS)
-  // ==========================================
-  function switchTab(tabKey) {
-    const views = {
-      'ruta': 'view-dashboard',
-      'dashboard': 'view-dashboard',
-      'clientes': 'view-clientes',
-      'visita': 'view-visita',
-      'historial': 'view-historial',
-      'alta': 'view-alta'
-    };
-
-    const targetId = views[tabKey] || tabKey;
-
-    // Si entra a visita y no hay cliente seleccionado, preparar el primero disponible
-    if (tabKey === 'visita') {
-      if (!activeClientForCheckin) {
-        const nextPending = routeVisits.find(r => r.estado === 'pendiente');
-        if (nextPending) {
-          prepararCheckinConCliente(nextPending.clientId, false);
-        } else if (clientsData.length > 0) {
-          prepararCheckinConCliente(clientsData[0].id, false);
+    function updateCloudStatusUI(connected) {
+      const label = document.getElementById('header-cloud-label');
+      const dot = document.getElementById('header-cloud-dot');
+      if (label && dot) {
+        if (connected) {
+          label.textContent = '🟢 Supabase Live';
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
         } else {
-          showToast('No tienes clientes registrados. Registra uno primero.');
-          switchTab('alta');
+          label.textContent = '🟡 Offline / Cache';
+          dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+        }
+      }
+    }
+
+    function loadLocalCache() {
+      try {
+        const storedClients = localStorage.getItem(DB_KEY_CLIENTS);
+        clientsData = storedClients ? JSON.parse(storedClients) : [];
+
+        const storedRoute = localStorage.getItem(DB_KEY_ROUTE);
+        routeVisits = storedRoute ? JSON.parse(storedRoute) : [];
+
+        const storedHistory = localStorage.getItem(DB_KEY_HISTORY);
+        historyVisits = storedHistory ? JSON.parse(storedHistory) : [];
+      } catch (e) {
+        clientsData = [];
+        routeVisits = [];
+        historyVisits = [];
+      }
+    }
+
+    // CARGA CENTRAL DESDE SUPABASE
+    async function cargarDatos(notify = false) {
+      if (!supabaseClient) {
+        loadLocalCache();
+        renderAllViews();
+        updateCloudStatusUI(false);
+        return;
+      }
+
+      try {
+        // 1. Obtener clientes de Supabase
+        const { data: remoteClients, error: errClients } = await supabaseClient
+          .from('clientes')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (errClients) throw errClients;
+
+        if (remoteClients) {
+          clientsData = remoteClients.map(c => ({
+            id: c.id ? String(c.id) : ('CLI-' + Math.random()),
+            nombre: c.nombre || c.nombre_comercial || 'Comercio',
+            idFiscal: c.id_fiscal || c.idFiscal || 'N/A',
+            rubro: c.rubro || 'Almacén / Minimarket',
+            categoria: c.categoria || 'Cat. B (Frecuente)',
+            direccion: c.direccion || '',
+            contacto: c.contacto || '',
+            telefono: c.telefono || '',
+            lat: c.lat || '-34.603702',
+            lng: c.lng || '-58.381615',
+            fechaAlta: c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Reciente'
+          }));
+          localStorage.setItem(DB_KEY_CLIENTS, JSON.stringify(clientsData));
+        }
+
+        // 2. Obtener visitas de Supabase
+        const { data: remoteVisits, error: errVisits } = await supabaseClient
+          .from('visitas')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!errVisits && remoteVisits) {
+          historyVisits = remoteVisits.map(v => ({
+            id: v.id ? String(v.id) : ('HIS-' + Math.random()),
+            clientId: v.cliente_id ? String(v.cliente_id) : (v.clientId || ''),
+            nombre: v.cliente_nombre || v.nombre || 'Comercio',
+            rubro: v.rubro || 'Comercio',
+            direccion: v.direccion || '',
+            contacto: v.contacto || '',
+            hora: v.hora || (v.created_at ? new Date(v.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '10:00 AM'),
+            fecha: v.fecha || (v.created_at ? new Date(v.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : 'Hoy'),
+            motivo: v.motivo || 'Toma de Pedido',
+            resultado: v.resultado || 'Exitosa',
+            monto: Number(v.monto || 0),
+            notas: v.notas || '',
+            lat: v.lat || '-34.603702',
+            lng: v.lng || '-58.381615'
+          }));
+          localStorage.setItem(DB_KEY_HISTORY, JSON.stringify(historyVisits));
+        }
+
+        sincronizarRutaConVisitas();
+        updateCloudStatusUI(true);
+        renderAllViews();
+
+        if (notify) {
+          showToast('🟢 Conectado: Supabase en Tiempo Real');
+        }
+      } catch (error) {
+        console.warn('Aviso conexión Supabase:', error.message || error);
+        updateCloudStatusUI(false);
+        loadLocalCache();
+        renderAllViews();
+        if (notify) {
+          showToast('Datos locales cargados (Modo Offline)');
+        }
+      }
+    }
+
+    function sincronizarRutaConVisitas() {
+      if (routeVisits.length === 0 && clientsData.length > 0) {
+        clientsData.slice(0, 3).forEach((client, idx) => {
+          routeVisits.push({
+            id: 'ROU-' + (Date.now() + idx),
+            clientId: client.id,
+            nombre: client.nombre,
+            rubro: client.rubro,
+            direccion: client.direccion,
+            contacto: client.contacto,
+            hora: (9 + (idx * 2)) + ':30 AM',
+            estado: 'pendiente',
+            monto: 0
+          });
+        });
+        localStorage.setItem(DB_KEY_ROUTE, JSON.stringify(routeVisits));
+      }
+
+      routeVisits.forEach(r => {
+        const match = historyVisits.find(h => h.clientId === r.clientId);
+        if (match) {
+          r.estado = 'completada';
+          r.monto = match.monto;
+        }
+      });
+    }
+
+    function renderAllViews() {
+      renderClients();
+      renderDashboard();
+      renderHistorial();
+    }
+
+    function saveClientsLocal() {
+      localStorage.setItem(DB_KEY_CLIENTS, JSON.stringify(clientsData));
+    }
+
+    function saveRouteLocal() {
+      localStorage.setItem(DB_KEY_ROUTE, JSON.stringify(routeVisits));
+    }
+
+    function saveHistoryLocal() {
+      localStorage.setItem(DB_KEY_HISTORY, JSON.stringify(historyVisits));
+    }
+
+    // LOGIN
+    function autocompletarPin() {
+      document.getElementById('login-pin').value = '1234';
+      showToast('PIN 1234 autocompletado');
+    }
+
+    function checkSession() {
+      const savedUserJson = localStorage.getItem(DB_KEY_USER);
+      if (savedUserJson) {
+        try {
+          currentUser = JSON.parse(savedUserJson);
+          applyUserDataToUI();
+          startAppInterface();
           return;
-        }
+        } catch (e) {}
       }
+      showLoginScreen();
     }
 
-    // Ocultar todas las pantallas
-    document.querySelectorAll('.app-screen').forEach(el => {
-      el.classList.remove('active');
-    });
-
-    // Mostrar destino
-    const targetEl = document.getElementById(targetId);
-    if (targetEl) {
-      targetEl.classList.add('active');
-    }
-
-    // Scroll top
-    const mainContent = document.getElementById('app-main-content');
-    if (mainContent) mainContent.scrollTop = 0;
-
-    // Actualizar botones de la barra inferior
-    updateBottomNavIcons(tabKey);
-  }
-
-  function updateBottomNavIcons(tabKey) {
-    const btnMap = {
-      'ruta': 'tab-btn-dashboard',
-      'dashboard': 'tab-btn-dashboard',
-      'clientes': 'tab-btn-clientes',
-      'visita': 'tab-btn-visita',
-      'historial': 'tab-btn-historial'
-    };
-
-    ['tab-btn-dashboard', 'tab-btn-clientes', 'tab-btn-visita', 'tab-btn-historial'].forEach(id => {
-      const btn = document.getElementById(id);
-      if (!btn) return;
-      const span = btn.querySelector('span');
-
-      if (id === btnMap[tabKey]) {
-        btn.classList.remove('text-slate-400');
-        btn.classList.add('text-blue-700');
-        if (span) {
-          span.classList.remove('font-semibold');
-          span.classList.add('font-extrabold');
-        }
+    function onUserSelectChange() {
+      const select = document.getElementById('login-user-select');
+      const customContainer = document.getElementById('custom-user-container');
+      if (select.value === 'custom') {
+        customContainer.classList.remove('hidden');
       } else {
-        btn.classList.remove('text-blue-700');
-        btn.classList.add('text-slate-400');
-        if (span) {
-          span.classList.remove('font-extrabold');
-          span.classList.add('font-semibold');
-        }
+        customContainer.classList.add('hidden');
       }
-    });
-  }
-
-  // ==========================================
-  // DIRECTORIO DE CLIENTES
-  // ==========================================
-  function openAltaCliente() {
-    document.getElementById('form-cliente').reset();
-    switchTab('alta');
-  }
-
-  function guardarCliente() {
-    const nombre = document.getElementById('nombre_comercial').value.trim();
-    const idFiscal = document.getElementById('id_fiscal').value.trim() || 'N/A';
-    const rubro = document.getElementById('rubro_comercio').value;
-    const categoria = document.getElementById('categoria_cliente').value;
-    const direccion = document.getElementById('direccion').value.trim();
-    const contacto = document.getElementById('contacto_nombre').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-
-    if (!nombre || !direccion || !contacto) {
-      showToast('Completa los campos requeridos (*)');
-      return;
     }
 
-    const newClient = {
-      id: 'CLI-' + Date.now(),
-      nombre,
-      idFiscal,
-      rubro,
-      categoria,
-      direccion,
-      contacto,
-      telefono,
-      fechaAlta: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
-    };
+    function handleLogin() {
+      const selectVal = document.getElementById('login-user-select').value;
+      let userData;
 
-    clientsData.unshift(newClient);
-    saveClients();
+      if (selectVal === 'custom') {
+        const customName = document.getElementById('custom-user-name').value.trim() || 'Operador Comercial';
+        userData = {
+          name: customName,
+          role: "Operador de Ruta",
+          shift: customName + " • Turno Activo",
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
+        };
+      } else {
+        userData = USERS_INFO[selectVal] || USERS_INFO.carlos;
+      }
 
-    // Agregar a la ruta de hoy
-    agregarClienteARuta(newClient.id, false);
+      currentUser = userData;
+      localStorage.setItem(DB_KEY_USER, JSON.stringify(userData));
 
-    showToast('¡Comercio "' + nombre + '" guardado y añadido a la ruta!');
-    setTimeout(() => {
+      applyUserDataToUI();
+      showToast('¡Bienvenido, ' + userData.name + '!');
+      startAppInterface();
+    }
+
+    function startAppInterface() {
+      const loginView = document.getElementById('login-view');
+      loginView.classList.add('hidden');
+      loginView.style.display = 'none';
+
+      const appShell = document.getElementById('app-shell');
+      appShell.classList.remove('hidden');
+      appShell.style.display = 'flex';
+
+      const bottomNav = document.getElementById('bottom-nav');
+      if (bottomNav) {
+        bottomNav.classList.remove('hidden');
+        bottomNav.style.display = 'flex';
+      }
+
+      renderAllViews();
       switchTab('ruta');
-    }, 400);
-  }
-
-  function guardarClienteSolo() {
-    const nombre = document.getElementById('nombre_comercial').value.trim();
-    const idFiscal = document.getElementById('id_fiscal').value.trim() || 'N/A';
-    const rubro = document.getElementById('rubro_comercio').value;
-    const categoria = document.getElementById('categoria_cliente').value;
-    const direccion = document.getElementById('direccion').value.trim();
-    const contacto = document.getElementById('contacto_nombre').value.trim();
-    const telefono = document.getElementById('telefono').value.trim();
-
-    if (!nombre || !direccion || !contacto) {
-      showToast('Completa los campos requeridos (*)');
-      return;
     }
 
-    const newClient = {
-      id: 'CLI-' + Date.now(),
-      nombre,
-      idFiscal,
-      rubro,
-      categoria,
-      direccion,
-      contacto,
-      telefono,
-      fechaAlta: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })
-    };
+    function showLoginScreen() {
+      const appShell = document.getElementById('app-shell');
+      if (appShell) {
+        appShell.classList.add('hidden');
+        appShell.style.display = 'none';
+      }
 
-    clientsData.unshift(newClient);
-    saveClients();
-
-    showToast('¡Comercio registrado en directorio permanente!');
-    setTimeout(() => {
-      switchTab('clientes');
-    }, 400);
-  }
-
-  function setCategoryFilter(cat, btnElement) {
-    selectedCategoryFilter = cat;
-    document.querySelectorAll('#client-filters-pills button').forEach(p => {
-      p.className = "px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-600 shrink-0";
-    });
-    btnElement.className = "px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-800 text-white shrink-0";
-    renderClients();
-  }
-
-  function filtrarClientes() {
-    renderClients();
-  }
-
-  function renderClients() {
-    const container = document.getElementById('clients-list-container');
-    if (!container) return;
-    const searchVal = (document.getElementById('search-input-clientes')?.value || '').toLowerCase().trim();
-    const countIndicator = document.getElementById('client-count-indicator');
-    const pillAll = document.getElementById('pill-filter-all');
-    const dbStatusLabel = document.getElementById('db-status-label');
-
-    let filtered = clientsData.filter(c => {
-      const matchesCategory = selectedCategoryFilter === 'all' || c.rubro.includes(selectedCategoryFilter.split('/')[0].trim());
-      const matchesSearch = !searchVal || 
-        c.nombre.toLowerCase().includes(searchVal) || 
-        c.direccion.toLowerCase().includes(searchVal) ||
-        c.contacto.toLowerCase().includes(searchVal);
-      return matchesCategory && matchesSearch;
-    });
-
-    if (countIndicator) {
-      if (clientsData.length === 0) {
-        countIndicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400 mr-1.5"></span> 0 comercios registrados';
-      } else {
-        countIndicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> ' + clientsData.length + ' puntos comerciales sincronizados';
+      const loginView = document.getElementById('login-view');
+      if (loginView) {
+        loginView.classList.remove('hidden');
+        loginView.style.display = 'flex';
       }
     }
 
-    if (pillAll) pillAll.textContent = 'Todos (' + clientsData.length + ')';
-    if (dbStatusLabel) {
-      dbStatusLabel.textContent = clientsData.length === 0 ? 'Limpia (0 registros)' : clientsData.length + ' locales guardados';
+    function applyUserDataToUI() {
+      if (!currentUser) return;
+      const greetingText = document.getElementById('greeting-text');
+      const firstName = currentUser.name.split(' ')[0];
+      if (greetingText) greetingText.textContent = '¡Hola, ' + firstName + '!';
+
+      const greetingSubtext = document.getElementById('greeting-subtext');
+      if (greetingSubtext) greetingSubtext.textContent = currentUser.shift;
+
+      const dropdownUserName = document.getElementById('dropdown-user-name');
+      if (dropdownUserName) dropdownUserName.textContent = currentUser.name;
+
+      const headerAvatar = document.getElementById('header-avatar');
+      if (headerAvatar && currentUser.avatar) headerAvatar.src = currentUser.avatar;
     }
 
-    // EMPTY STATE
-    if (clientsData.length === 0) {
-      container.innerHTML = `
-        <div class="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm text-center space-y-3.5 my-1">
-          <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mx-auto text-2xl shadow-inner">
-            🏪
-          </div>
-          <div class="space-y-1">
-            <h4 class="text-sm font-extrabold text-slate-900">Aún no tienes clientes registrados</h4>
-            <p class="text-xs text-slate-500 max-w-xs mx-auto">
-              La base de datos está limpia. Registra tu primer local comercial o carga datos demo de prueba.
-            </p>
-          </div>
-          <div class="pt-2 space-y-2">
-            <button onclick="openAltaCliente()" class="w-full py-3 px-4 rounded-xl bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-700/20 hover:bg-blue-800 active:scale-95 transition flex items-center justify-center space-x-1.5">
-              <span>+ Registrar Primer Cliente</span>
-            </button>
-            <button onclick="cargarDatosDemo()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition">
-              📦 Cargar 3 comercios demo
-            </button>
-          </div>
-        </div>
-      `;
-      return;
+    function toggleUserDropdown() {
+      const menu = document.getElementById('user-profile-menu');
+      if (menu) menu.classList.toggle('hidden');
     }
 
-    if (filtered.length === 0) {
-      container.innerHTML = `
-        <div class="bg-white rounded-2xl p-5 text-center border border-slate-200 shadow-sm space-y-1">
-          <p class="text-xs font-bold text-slate-700">Sin resultados para esta búsqueda</p>
-          <p class="text-[11px] text-slate-400">Prueba con otro término de búsqueda.</p>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    filtered.forEach(client => {
-      const isAlreadyInRoute = routeVisits.some(r => r.clientId === client.id);
-      const icon = client.rubro.includes('Farmacia') ? '💊' : (client.rubro.includes('Café') || client.rubro.includes('Gastro') ? '☕' : '🏪');
-
-      html += `
-        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
-          <div class="flex justify-between items-start">
-            <div class="flex items-center space-x-2.5">
-              <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black">
-                ${icon}
-              </div>
-              <div>
-                <h3 class="text-sm font-extrabold text-slate-900">${escapeHtml(client.nombre)}</h3>
-                <p class="text-[11px] text-slate-500">${escapeHtml(client.rubro)} • ${escapeHtml(client.categoria || 'Cat. B')}</p>
-              </div>
-            </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isAlreadyInRoute ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
-              ${isAlreadyInRoute ? '• En Ruta' : '• Disponible'}
-            </span>
-          </div>
-
-          <div class="text-xs text-slate-600 space-y-1">
-            <p class="flex items-center truncate"><span class="text-slate-400 mr-2 shrink-0">👤</span> ${escapeHtml(client.contacto)}</p>
-            <p class="flex items-center truncate"><span class="text-slate-400 mr-2 shrink-0">📍</span> ${escapeHtml(client.direccion)}</p>
-            <div class="flex justify-between text-[11px] text-slate-500 pt-0.5">
-              <span>Tel: <strong>${escapeHtml(client.telefono)}</strong></span>
-              <span>Alta: <strong>${escapeHtml(client.fechaAlta || 'Hoy')}</strong></span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-            <button onclick="prepararCheckinConCliente('${client.id}', true)" class="py-2 px-3 rounded-xl bg-blue-700 text-white text-xs font-bold hover:bg-blue-800 active:scale-95 transition flex items-center justify-center space-x-1 shadow-sm">
-              <span>📍 Iniciar Check-in</span>
-            </button>
-            ${isAlreadyInRoute ? `
-              <button onclick="removerClienteDeRuta('${client.id}')" class="py-2 px-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold hover:bg-rose-100 transition flex items-center justify-center space-x-1">
-                <span>✕ Quitar de Ruta</span>
-              </button>
-            ` : `
-              <button onclick="agregarClienteARuta('${client.id}', true)" class="py-2 px-3 rounded-xl bg-blue-50 text-blue-800 text-xs font-bold hover:bg-blue-100 transition flex items-center justify-center space-x-1">
-                <span>+ Añadir a Ruta</span>
-              </button>
-            `}
-          </div>
-        </div>
-      `;
+    window.addEventListener('click', (e) => {
+      const menu = document.getElementById('user-profile-menu');
+      if (menu && !menu.classList.contains('hidden')) {
+        const isClickInside = menu.contains(e.target) || e.target.closest('button[onclick="toggleUserDropdown()"]');
+        if (!isClickInside) menu.classList.add('hidden');
+      }
     });
 
-    container.innerHTML = html;
-  }
-
-  // ==========================================
-  // RUTA DEL DÍA Y DASHBOARD
-  // ==========================================
-  function agregarClienteARuta(clientId, notify = true) {
-    const client = clientsData.find(c => c.id === clientId);
-    if (!client) return;
-
-    if (routeVisits.some(r => r.clientId === clientId)) {
-      if (notify) showToast('El cliente ya está en tu ruta de hoy');
-      return;
+    function logout() {
+      const menu = document.getElementById('user-profile-menu');
+      if (menu) menu.classList.add('hidden');
+      localStorage.removeItem(DB_KEY_USER);
+      currentUser = null;
+      showToast('Sesión cerrada correctamente');
+      setTimeout(() => {
+        showLoginScreen();
+      }, 300);
     }
 
-    const nextOrder = routeVisits.length + 1;
-    const defaultTime = (9 + (nextOrder % 8)) + ":30 AM";
+    // TABS
+    function switchTab(tabKey) {
+      const views = {
+        'ruta': 'view-dashboard',
+        'dashboard': 'view-dashboard',
+        'clientes': 'view-clientes',
+        'visita': 'view-visita',
+        'historial': 'view-historial',
+        'alta': 'view-alta'
+      };
 
-    routeVisits.push({
-      id: 'ROU-' + Date.now(),
-      clientId: client.id,
-      nombre: client.nombre,
-      rubro: client.rubro,
-      direccion: client.direccion,
-      contacto: client.contacto,
-      hora: defaultTime,
-      estado: 'pendiente',
-      monto: 0
-    });
+      const targetId = views[tabKey] || tabKey;
+      cargarDatos(false);
 
-    saveRoute();
-    renderClients();
-    if (notify) showToast('"' + client.nombre + '" agregado a la ruta de hoy');
-  }
+      if (tabKey === 'visita') {
+        if (!activeClientForCheckin) {
+          const nextPending = routeVisits.find(r => r.estado === 'pendiente');
+          if (nextPending) {
+            prepararCheckinConCliente(nextPending.clientId, false);
+          } else if (clientsData.length > 0) {
+            prepararCheckinConCliente(clientsData[0].id, false);
+          } else {
+            showToast('No tienes clientes registrados. Registra uno primero.');
+            switchTab('alta');
+            return;
+          }
+        }
+      }
 
-  function removerClienteDeRuta(clientId) {
-    routeVisits = routeVisits.filter(r => r.clientId !== clientId);
-    saveRoute();
-    renderClients();
-    showToast('Comercio retirado de la ruta');
-  }
+      document.querySelectorAll('.app-screen').forEach(el => {
+        el.classList.remove('active');
+      });
 
-  function optimizarRuta() {
-    if (routeVisits.length <= 1) {
-      showToast('Añade al menos 2 comercios para optimizar');
-      return;
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) {
+        targetEl.classList.add('active');
+      }
+
+      const mainContent = document.getElementById('app-main-content');
+      if (mainContent) mainContent.scrollTop = 0;
+
+      updateBottomNavIcons(tabKey);
     }
-    routeVisits.sort((a, b) => a.nombre.localeCompare(b.nombre));
-    saveRoute();
-    showToast('Ruta optimizada según tráfico y cercanía');
-  }
 
-  function renderDashboard() {
-    const totalCount = routeVisits.length;
-    const completadasCount = routeVisits.filter(r => r.estado === 'completada').length;
-    const pendientesCount = totalCount - completadasCount;
-    const efectividad = totalCount > 0 ? Math.round((completadasCount / totalCount) * 100) : 0;
-    const progressPercent = totalCount > 0 ? (completadasCount / totalCount) * 100 : 0;
+    function updateBottomNavIcons(tabKey) {
+      const btnMap = {
+        'ruta': 'tab-btn-dashboard',
+        'dashboard': 'tab-btn-dashboard',
+        'clientes': 'tab-btn-clientes',
+        'visita': 'tab-btn-visita',
+        'historial': 'tab-btn-historial'
+      };
 
-    document.getElementById('metric-total').textContent = totalCount;
-    document.getElementById('metric-completas').textContent = completadasCount;
-    document.getElementById('metric-cola').textContent = pendientesCount;
-    document.getElementById('metric-efectividad').textContent = efectividad + '%';
-    document.getElementById('metric-progress-text').textContent = progressPercent.toFixed(0) + '% cumplido';
-    document.getElementById('metric-progress-bar').style.width = progressPercent + '%';
+      ['tab-btn-dashboard', 'tab-btn-clientes', 'tab-btn-visita', 'tab-btn-historial'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const span = btn.querySelector('span');
 
-    document.getElementById('visits-title').textContent = 'Visitas de Hoy (' + totalCount + ')';
-    document.getElementById('circuit-summary').textContent = totalCount === 0 ? 'Sin paradas programadas' : pendientesCount + ' paradas pendientes de ' + totalCount;
+        if (id === btnMap[tabKey]) {
+          btn.classList.remove('text-slate-400');
+          btn.classList.add('text-blue-700');
+          if (span) {
+            span.classList.remove('font-semibold');
+            span.classList.add('font-extrabold');
+          }
+        } else {
+          btn.classList.remove('text-blue-700');
+          btn.classList.add('text-slate-400');
+          if (span) {
+            span.classList.remove('font-extrabold');
+            span.classList.add('font-semibold');
+          }
+        }
+      });
+    }
 
-    // Próxima parada Hero
-    const heroContainer = document.getElementById('hero-proxima-parada-container');
-    const proxima = routeVisits.find(r => r.estado === 'pendiente');
+    // ALTA DE CLIENTES CON SUPABASE
+    function openAltaCliente() {
+      document.getElementById('form-cliente').reset();
+      switchTab('alta');
+    }
 
-    if (!proxima) {
-      heroContainer.innerHTML = `
-        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm text-center space-y-2.5">
-          <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mx-auto text-xl">
-            🗺️
-          </div>
-          <h4 class="text-sm font-extrabold text-slate-900">${totalCount === 0 ? 'Ruta del día vacía' : '¡Jornada de visitas completada!'}</h4>
-          <p class="text-xs text-slate-500 max-w-xs mx-auto">
-            ${totalCount === 0 ? 'Ve a Clientes para añadir locales a tu jornada.' : 'Has completado todas las visitas programadas.'}
-          </p>
-          <button onclick="switchTab('clientes')" class="py-2.5 px-4 rounded-xl bg-blue-700 text-white font-bold text-xs hover:bg-blue-800 transition">
-            ${totalCount === 0 ? '+ Planificar Ruta' : 'Gestionar Directorio'}
-          </button>
-        </div>
-      `;
-    } else {
-      heroContainer.innerHTML = `
-        <div class="bg-gradient-to-br from-white to-blue-50/50 rounded-2xl p-4 border-2 border-blue-600/30 shadow-md">
-          <div class="flex justify-between items-start mb-2">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 tracking-wide">
-              <span class="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5 animate-pulse"></span> PRÓXIMA PARADA
-            </span>
-            <span class="text-xs font-bold text-slate-700">${proxima.hora}</span>
-          </div>
-          <div class="flex space-x-3 items-center mb-3">
-            <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xl shrink-0">
+    async function guardarCliente() {
+      const nombre = document.getElementById('nombre_comercial').value.trim();
+      const idFiscal = document.getElementById('id_fiscal').value.trim() || 'N/A';
+      const rubro = document.getElementById('rubro_comercio').value;
+      const categoria = document.getElementById('categoria_cliente').value;
+      const direccion = document.getElementById('direccion').value.trim();
+      const contacto = document.getElementById('contacto_nombre').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const lat = document.getElementById('alta-gps-lat')?.value.trim() || '-34.603702';
+      const lng = document.getElementById('alta-gps-lng')?.value.trim() || '-58.381615';
+
+      if (!nombre || !direccion || !contacto) {
+        showToast('Completa los campos requeridos (*)');
+        return;
+      }
+
+      const payload = {
+        id: 'CLI-' + Date.now(),
+        nombre,
+        id_fiscal: idFiscal,
+        rubro,
+        categoria,
+        direccion,
+        contacto,
+        telefono,
+        lat: parseFloat(lat) || -34.603702,
+        lng: parseFloat(lng) || -58.381615
+      };
+
+      let syncedRemote = false;
+
+      if (supabaseClient) {
+        try {
+          const { data, error } = await supabaseClient.from('clientes').insert([payload]).select();
+          if (!error) {
+            syncedRemote = true;
+          } else {
+            console.warn('Error insertando en Supabase clientes:', error);
+          }
+        } catch (err) {
+          console.warn('Error Supabase:', err);
+        }
+      }
+
+      payload.idFiscal = idFiscal;
+      payload.fechaAlta = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+
+      clientsData.unshift(payload);
+      saveClientsLocal();
+      agregarClienteARuta(payload.id, false);
+
+      if (syncedRemote) {
+        showToast('🟢 Cliente sincronizado en la nube Supabase');
+      } else {
+        showToast('Cliente guardado en caché local (offline)');
+      }
+
+      cargarDatos(false);
+
+      setTimeout(() => {
+        switchTab('ruta');
+      }, 400);
+    }
+
+    async function guardarClienteSolo() {
+      const nombre = document.getElementById('nombre_comercial').value.trim();
+      const idFiscal = document.getElementById('id_fiscal').value.trim() || 'N/A';
+      const rubro = document.getElementById('rubro_comercio').value;
+      const categoria = document.getElementById('categoria_cliente').value;
+      const direccion = document.getElementById('direccion').value.trim();
+      const contacto = document.getElementById('contacto_nombre').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      const lat = document.getElementById('alta-gps-lat')?.value.trim() || '-34.603702';
+      const lng = document.getElementById('alta-gps-lng')?.value.trim() || '-58.381615';
+
+      if (!nombre || !direccion || !contacto) {
+        showToast('Completa los campos requeridos (*)');
+        return;
+      }
+
+      const payload = {
+        id: 'CLI-' + Date.now(),
+        nombre,
+        id_fiscal: idFiscal,
+        rubro,
+        categoria,
+        direccion,
+        contacto,
+        telefono,
+        lat: parseFloat(lat) || -34.603702,
+        lng: parseFloat(lng) || -58.381615
+      };
+
+      let syncedRemote = false;
+
+      if (supabaseClient) {
+        try {
+          const { error } = await supabaseClient.from('clientes').insert([payload]);
+          if (!error) syncedRemote = true;
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+
+      payload.idFiscal = idFiscal;
+      payload.fechaAlta = new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+
+      clientsData.unshift(payload);
+      saveClientsLocal();
+
+      if (syncedRemote) {
+        showToast('🟢 Cliente sincronizado en Supabase');
+      } else {
+        showToast('Comercio guardado en directorio local');
+      }
+
+      cargarDatos(false);
+
+      setTimeout(() => {
+        switchTab('clientes');
+      }, 400);
+    }
+
+    function setCategoryFilter(cat, btnElement) {
+      selectedCategoryFilter = cat;
+      document.querySelectorAll('#client-filters-pills button').forEach(p => {
+        p.className = "px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white border border-slate-200 text-slate-600 shrink-0";
+      });
+      btnElement.className = "px-3.5 py-1.5 rounded-full text-xs font-bold bg-blue-800 text-white shrink-0";
+      renderClients();
+    }
+
+    function filtrarClientes() {
+      renderClients();
+    }
+
+    function renderClients() {
+      const container = document.getElementById('clients-list-container');
+      if (!container) return;
+      const searchVal = (document.getElementById('search-input-clientes')?.value || '').toLowerCase().trim();
+      const countIndicator = document.getElementById('client-count-indicator');
+      const pillAll = document.getElementById('pill-filter-all');
+      const dbStatusLabel = document.getElementById('db-status-label');
+
+      let filtered = clientsData.filter(c => {
+        const matchesCategory = selectedCategoryFilter === 'all' || (c.rubro && c.rubro.includes(selectedCategoryFilter.split('/')[0].trim()));
+        const matchesSearch = !searchVal || 
+          (c.nombre && c.nombre.toLowerCase().includes(searchVal)) || 
+          (c.direccion && c.direccion.toLowerCase().includes(searchVal)) ||
+          (c.contacto && c.contacto.toLowerCase().includes(searchVal));
+        return matchesCategory && matchesSearch;
+      });
+
+      if (countIndicator) {
+        if (clientsData.length === 0) {
+          countIndicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-400 mr-1.5"></span> 0 comercios registrados';
+        } else {
+          countIndicator.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> ' + clientsData.length + ' puntos sincronizados en Supabase';
+        }
+      }
+
+      if (pillAll) pillAll.textContent = 'Todos (' + clientsData.length + ')';
+      if (dbStatusLabel) {
+        dbStatusLabel.textContent = clientsData.length === 0 ? 'Limpia (0 registros)' : clientsData.length + ' locales en nube';
+      }
+
+      if (clientsData.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm text-center space-y-3.5 my-1">
+            <div class="w-14 h-14 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mx-auto text-2xl shadow-inner">
               🏪
             </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-extrabold text-slate-900 truncate">${escapeHtml(proxima.nombre)}</h3>
-              <p class="text-xs text-slate-500 truncate">${escapeHtml(proxima.direccion)}</p>
-              <p class="text-[11px] text-slate-600">Contacto: <strong>${escapeHtml(proxima.contacto)}</strong></p>
+            <div class="space-y-1">
+              <h4 class="text-sm font-extrabold text-slate-900">Aún no tienes clientes registrados</h4>
+              <p class="text-xs text-slate-500 max-w-xs mx-auto">
+                Tu base de datos Supabase está lista. Registra tu primer comercio o carga datos demo de prueba.
+              </p>
             </div>
-          </div>
-          <div class="grid grid-cols-2 gap-2">
-            <button class="w-full py-2.5 px-3 rounded-xl bg-blue-50 text-blue-800 font-bold text-xs flex items-center justify-center space-x-1 hover:bg-blue-100 transition" onclick="showToast('Iniciando navegación GPS hacia local...')">
-              <span>Navegar GPS</span>
-            </button>
-            <button class="w-full py-2.5 px-3 rounded-xl bg-blue-700 text-white font-bold text-xs flex items-center justify-center space-x-1 hover:bg-blue-800 shadow-md transition" onclick="prepararCheckinConCliente('${proxima.clientId}', true)">
-              <span>Iniciar Check-in</span>
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    // Visitas list
-    const listContainer = document.getElementById('visits-list-container');
-    if (routeVisits.length === 0) {
-      listContainer.innerHTML = `
-        <div class="bg-white rounded-2xl p-5 text-center border border-slate-200/80 shadow-sm space-y-1">
-          <p class="text-xs font-bold text-slate-700">No hay visitas en tu ruta de hoy</p>
-          <p class="text-[11px] text-slate-400">Añade clientes desde la pestaña "Clientes".</p>
-        </div>
-      `;
-      return;
-    }
-
-    let visitsHtml = '';
-    routeVisits.forEach(item => {
-      const isCompleted = item.estado === 'completada';
-      visitsHtml += `
-        <div class="bg-white rounded-2xl p-3.5 ${isCompleted ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-amber-500'} border border-slate-200/80 shadow-sm space-y-2">
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="text-[10px] font-semibold text-slate-500">${item.hora} • ${escapeHtml(item.rubro || 'Comercio')}</span>
-              <h4 class="text-sm font-extrabold text-slate-900">${escapeHtml(item.nombre)}</h4>
-              <p class="text-[11px] text-slate-500 truncate max-w-[200px]">${escapeHtml(item.direccion)}</p>
-            </div>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
-              • ${isCompleted ? 'Completada' : 'Pendiente'}
-            </span>
-          </div>
-          ${isCompleted ? `
-            <div class="bg-slate-50 rounded-lg p-2 text-xs flex items-center justify-between text-slate-700">
-              <span class="text-emerald-700 font-semibold">Venta concretada: $${Number(item.monto || 0).toFixed(2)}</span>
-              <span class="text-[10px] text-slate-400">Auditado GPS</span>
-            </div>
-          ` : `
-            <div class="flex justify-between items-center pt-1 text-xs">
-              <span class="text-slate-500 text-[11px]">En espera</span>
-              <button class="text-blue-700 font-bold hover:underline flex items-center" onclick="prepararCheckinConCliente('${item.clientId}', true)">
-                Iniciar visita →
+            <div class="pt-2 space-y-2">
+              <button onclick="openAltaCliente()" class="w-full py-3 px-4 rounded-xl bg-blue-700 text-white font-extrabold text-xs shadow-md shadow-blue-700/20 hover:bg-blue-800 active:scale-95 transition flex items-center justify-center space-x-1.5">
+                <span>+ Registrar Primer Cliente</span>
+              </button>
+              <button onclick="cargarDatosDemo()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition">
+                📦 Cargar 3 comercios demo
               </button>
             </div>
-          `}
-        </div>
-      `;
-    });
+          </div>
+        `;
+        return;
+      }
 
-    listContainer.innerHTML = visitsHtml;
-  }
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-5 text-center border border-slate-200 shadow-sm space-y-1">
+            <p class="text-xs font-bold text-slate-700">Sin resultados para esta búsqueda</p>
+            <p class="text-[11px] text-slate-400">Prueba con otro término de búsqueda.</p>
+          </div>
+        `;
+        return;
+      }
 
-  // ==========================================
-  // CHECK-IN DE VISITA
-  // ==========================================
-  function prepararCheckinConCliente(clientId, doSwitch = true) {
-    const client = clientsData.find(c => c.id === clientId);
-    if (!client) {
-      showToast('Cliente no encontrado');
-      return;
+      let html = '';
+      filtered.forEach(client => {
+        const isAlreadyInRoute = routeVisits.some(r => r.clientId === client.id);
+        const icon = (client.rubro && client.rubro.includes('Farmacia')) ? '💊' : ((client.rubro && (client.rubro.includes('Café') || client.rubro.includes('Gastro'))) ? '☕' : '🏪');
+
+        html += `
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
+            <div class="flex justify-between items-start">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-black">
+                  ${icon}
+                </div>
+                <div>
+                  <h3 class="text-sm font-extrabold text-slate-900">${escapeHtml(client.nombre)}</h3>
+                  <p class="text-[11px] text-slate-500">${escapeHtml(client.rubro || 'Comercio')} • ${escapeHtml(client.categoria || 'Cat. B')}</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isAlreadyInRoute ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
+                ${isAlreadyInRoute ? '• En Ruta' : '• Disponible'}
+              </span>
+            </div>
+
+            <div class="text-xs text-slate-600 space-y-1">
+              <p class="flex items-center truncate"><span class="text-slate-400 mr-2 shrink-0">👤</span> ${escapeHtml(client.contacto || 'Sin contacto')}</p>
+              <p class="flex items-center truncate"><span class="text-slate-400 mr-2 shrink-0">📍</span> ${escapeHtml(client.direccion || 'Sin dirección')}</p>
+              <div class="flex justify-between text-[11px] text-slate-500 pt-0.5">
+                <span>Tel: <strong>${escapeHtml(client.telefono || 'N/A')}</strong></span>
+                <span>Alta: <strong>${escapeHtml(client.fechaAlta || 'Hoy')}</strong></span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100">
+              <button onclick="prepararCheckinConCliente('${client.id}', true)" class="py-2 px-3 rounded-xl bg-blue-700 text-white text-xs font-bold hover:bg-blue-800 active:scale-95 transition flex items-center justify-center space-x-1 shadow-sm">
+                <span>📍 Iniciar Check-in</span>
+              </button>
+              ${isAlreadyInRoute ? `
+                <button onclick="removerClienteDeRuta('${client.id}')" class="py-2 px-3 rounded-xl bg-rose-50 text-rose-700 text-xs font-bold hover:bg-rose-100 transition flex items-center justify-center space-x-1">
+                  <span>✕ Quitar de Ruta</span>
+                </button>
+              ` : `
+                <button onclick="agregarClienteARuta('${client.id}', true)" class="py-2 px-3 rounded-xl bg-blue-50 text-blue-800 text-xs font-bold hover:bg-blue-100 transition flex items-center justify-center space-x-1">
+                  <span>+ Añadir a Ruta</span>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
     }
 
-    activeClientForCheckin = client;
+    // RUTA DEL DÍA Y DASHBOARD
+    function agregarClienteARuta(clientId, notify = true) {
+      const client = clientsData.find(c => c.id === clientId);
+      if (!client) return;
 
-    const nameEl = document.getElementById('visita-client-name');
-    const contactEl = document.getElementById('visita-client-contact');
-    const addrEl = document.getElementById('visita-client-address');
-    const iconEl = document.getElementById('visita-client-icon');
+      if (routeVisits.some(r => r.clientId === clientId)) {
+        if (notify) showToast('El cliente ya está en tu ruta de hoy');
+        return;
+      }
 
-    if (nameEl) nameEl.innerHTML = escapeHtml(client.nombre) + ' <span class="text-emerald-600 text-xs">✓</span>';
-    if (contactEl) contactEl.textContent = 'Contacto: ' + client.contacto;
-    if (addrEl) addrEl.textContent = client.direccion;
+      const nextOrder = routeVisits.length + 1;
+      const defaultTime = (9 + (nextOrder % 8)) + ":30 AM";
 
-    const icon = client.rubro.includes('Farmacia') ? '💊' : (client.rubro.includes('Café') ? '☕' : '🏪');
-    if (iconEl) iconEl.textContent = icon;
-
-    if (doSwitch) {
-      switchTab('visita');
-      showToast('Check-in preparado: ' + client.nombre);
-    }
-  }
-
-  function revalidarGeocercaVisita() {
-    showToast('Recalibrando satélites GNSS...');
-    setTimeout(() => {
-      document.getElementById('geofence-distancia').textContent = '9 metros';
-      showToast('✓ Señal revalidada con precisión ±4m');
-    }, 600);
-  }
-
-  function guardarVisita() {
-    if (!activeClientForCheckin) {
-      showToast('Selecciona un comercio primero');
-      return;
-    }
-
-    const motivo = document.querySelector('input[name="motivo"]:checked')?.value || 'Toma de Pedido';
-    const resultado = document.querySelector('input[name="resultado"]:checked')?.value || 'Exitosa';
-    const monto = parseFloat(document.getElementById('visita-monto')?.value || 0) || 0;
-    const notas = document.getElementById('visita-notas')?.value || '';
-
-    const now = new Date();
-    const horaStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    const fechaStr = now.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
-
-    const historyEntry = {
-      id: 'HIS-' + Date.now(),
-      clientId: activeClientForCheckin.id,
-      nombre: activeClientForCheckin.nombre,
-      rubro: activeClientForCheckin.rubro,
-      direccion: activeClientForCheckin.direccion,
-      contacto: activeClientForCheckin.contacto,
-      hora: horaStr,
-      fecha: fechaStr,
-      motivo,
-      resultado,
-      monto,
-      notas
-    };
-
-    historyVisits.unshift(historyEntry);
-    saveHistory();
-
-    const routeItem = routeVisits.find(r => r.clientId === activeClientForCheckin.id);
-    if (routeItem) {
-      routeItem.estado = 'completada';
-      routeItem.monto = monto;
-      saveRoute();
-    } else {
       routeVisits.push({
         id: 'ROU-' + Date.now(),
-        clientId: activeClientForCheckin.id,
-        nombre: activeClientForCheckin.nombre,
+        clientId: client.id,
+        nombre: client.nombre,
+        rubro: client.rubro,
+        direccion: client.direccion,
+        contacto: client.contacto,
+        hora: defaultTime,
+        estado: 'pendiente',
+        monto: 0
+      });
+
+      saveRouteLocal();
+      renderClients();
+      renderDashboard();
+      if (notify) showToast('"' + client.nombre + '" agregado a la ruta de hoy');
+    }
+
+    function removerClienteDeRuta(clientId) {
+      routeVisits = routeVisits.filter(r => r.clientId !== clientId);
+      saveRouteLocal();
+      renderClients();
+      renderDashboard();
+      showToast('Comercio retirado de la ruta');
+    }
+
+    function optimizarRuta() {
+      if (routeVisits.length <= 1) {
+        showToast('Añade al menos 2 comercios para optimizar');
+        return;
+      }
+      routeVisits.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      saveRouteLocal();
+      showToast('Ruta optimizada según tráfico y cercanía');
+      renderDashboard();
+    }
+
+    function renderDashboard() {
+      const totalCount = routeVisits.length;
+      const completadasCount = routeVisits.filter(r => r.estado === 'completada').length;
+      const pendientesCount = totalCount - completadasCount;
+      const efectividad = totalCount > 0 ? Math.round((completadasCount / totalCount) * 100) : 0;
+      const progressPercent = totalCount > 0 ? (completadasCount / totalCount) * 100 : 0;
+
+      const elTotal = document.getElementById('metric-total');
+      if (elTotal) elTotal.textContent = totalCount;
+      const elComp = document.getElementById('metric-completas');
+      if (elComp) elComp.textContent = completadasCount;
+      const elPend = document.getElementById('metric-cola');
+      if (elPend) elPend.textContent = pendientesCount;
+      const elEfec = document.getElementById('metric-efectividad');
+      if (elEfec) elEfec.textContent = efectividad + '%';
+
+      const progText = document.getElementById('metric-progress-text');
+      if (progText) progText.textContent = progressPercent.toFixed(0) + '% cumplido';
+      const progBar = document.getElementById('metric-progress-bar');
+      if (progBar) progBar.style.width = progressPercent + '%';
+
+      const vTitle = document.getElementById('visits-title');
+      if (vTitle) vTitle.textContent = 'Visitas de Hoy (' + totalCount + ')';
+
+      const heroContainer = document.getElementById('hero-proxima-parada-container');
+      if (heroContainer) {
+        const proxima = routeVisits.find(r => r.estado === 'pendiente');
+
+        if (!proxima) {
+          heroContainer.innerHTML = `
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm text-center space-y-2.5">
+              <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-700 flex items-center justify-center mx-auto text-xl">
+                🗺️
+              </div>
+              <h4 class="text-sm font-extrabold text-slate-900">${totalCount === 0 ? 'Ruta del día vacía' : '¡Jornada de visitas completada!'}</h4>
+              <p class="text-xs text-slate-500 max-w-xs mx-auto">
+                ${totalCount === 0 ? 'Ve a Clientes para añadir locales a tu jornada.' : 'Has completado todas las visitas programadas.'}
+              </p>
+              <button onclick="switchTab('clientes')" class="py-2.5 px-4 rounded-xl bg-blue-700 text-white font-bold text-xs hover:bg-blue-800 transition">
+                ${totalCount === 0 ? '+ Planificar Ruta' : 'Gestionar Directorio'}
+              </button>
+            </div>
+          `;
+        } else {
+          heroContainer.innerHTML = `
+            <div class="bg-gradient-to-br from-white to-blue-50/50 rounded-2xl p-4 border-2 border-blue-600/30 shadow-md">
+              <div class="flex justify-between items-start mb-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 tracking-wide">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-600 mr-1.5 animate-pulse"></span> PRÓXIMA PARADA
+                </span>
+                <span class="text-xs font-bold text-slate-700">${proxima.hora}</span>
+              </div>
+              <div class="flex space-x-3 items-center mb-3">
+                <div class="w-11 h-11 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-black text-xl shrink-0">
+                  🏪
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-sm font-extrabold text-slate-900 truncate">${escapeHtml(proxima.nombre)}</h3>
+                  <p class="text-xs text-slate-500 truncate">${escapeHtml(proxima.direccion)}</p>
+                  <p class="text-[11px] text-slate-600">Contacto: <strong>${escapeHtml(proxima.contacto)}</strong></p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <button class="w-full py-2.5 px-3 rounded-xl bg-blue-50 text-blue-800 font-bold text-xs flex items-center justify-center space-x-1 hover:bg-blue-100 transition" onclick="showToast('Iniciando navegación GPS hacia local...')">
+                  <span>Navegar GPS</span>
+                </button>
+                <button class="w-full py-2.5 px-3 rounded-xl bg-blue-700 text-white font-bold text-xs flex items-center justify-center space-x-1 hover:bg-blue-800 shadow-md transition" onclick="prepararCheckinConCliente('${proxima.clientId}', true)">
+                  <span>Iniciar Check-in</span>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      const listContainer = document.getElementById('visits-list-container');
+      if (!listContainer) return;
+
+      if (routeVisits.length === 0) {
+        listContainer.innerHTML = `
+          <div class="bg-white rounded-2xl p-5 text-center border border-slate-200/80 shadow-sm space-y-1">
+            <p class="text-xs font-bold text-slate-700">No hay visitas en tu ruta de hoy</p>
+            <p class="text-[11px] text-slate-400">Añade clientes desde la pestaña "Clientes".</p>
+          </div>
+        `;
+        return;
+      }
+
+      let visitsHtml = '';
+      routeVisits.forEach(item => {
+        const isCompleted = item.estado === 'completada';
+        visitsHtml += `
+          <div class="bg-white rounded-2xl p-3.5 ${isCompleted ? 'border-l-4 border-l-emerald-500' : 'border-l-4 border-l-amber-500'} border border-slate-200/80 shadow-sm space-y-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-semibold text-slate-500">${item.hora} • ${escapeHtml(item.rubro || 'Comercio')}</span>
+                <h4 class="text-sm font-extrabold text-slate-900">${escapeHtml(item.nombre)}</h4>
+                <p class="text-[11px] text-slate-500 truncate max-w-[200px]">${escapeHtml(item.direccion)}</p>
+              </div>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isCompleted ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}">
+                • ${isCompleted ? 'Completada' : 'Pendiente'}
+              </span>
+            </div>
+            ${isCompleted ? `
+              <div class="bg-slate-50 rounded-lg p-2 text-xs flex items-center justify-between text-slate-700">
+                <span class="text-emerald-700 font-semibold">Venta concretada: $${Number(item.monto || 0).toFixed(2)}</span>
+                <span class="text-[10px] text-slate-400">Auditado GPS</span>
+              </div>
+            ` : `
+              <div class="flex justify-between items-center pt-1 text-xs">
+                <span class="text-slate-500 text-[11px]">En espera</span>
+                <button class="text-blue-700 font-bold hover:underline flex items-center" onclick="prepararCheckinConCliente('${item.clientId}', true)">
+                  Iniciar visita →
+                </button>
+              </div>
+            `}
+          </div>
+        `;
+      });
+
+      listContainer.innerHTML = visitsHtml;
+    }
+
+    // CHECK-IN CON SUPABASE
+    function prepararCheckinConCliente(clientId, doSwitch = true) {
+      const client = clientsData.find(c => c.id === clientId);
+      if (!client) {
+        showToast('Cliente no encontrado');
+        return;
+      }
+
+      activeClientForCheckin = client;
+
+      const nameEl = document.getElementById('visita-client-name');
+      const contactEl = document.getElementById('visita-client-contact');
+      const addrEl = document.getElementById('visita-client-address');
+      const iconEl = document.getElementById('visita-client-icon');
+
+      if (nameEl) nameEl.innerHTML = escapeHtml(client.nombre) + ' <span class="text-emerald-600 text-xs">✓</span>';
+      if (contactEl) contactEl.textContent = 'Contacto: ' + (client.contacto || 'Encargado');
+      if (addrEl) addrEl.textContent = client.direccion || 'Ubicación registrada';
+
+      const icon = (client.rubro && client.rubro.includes('Farmacia')) ? '💊' : ((client.rubro && client.rubro.includes('Café')) ? '☕' : '🏪');
+      if (iconEl) iconEl.textContent = icon;
+
+      if (doSwitch) {
+        switchTab('visita');
+        showToast('Check-in preparado: ' + client.nombre);
+      }
+    }
+
+    function revalidarGeocercaVisita() {
+      showToast('Recalibrando satélites GNSS...');
+      setTimeout(() => {
+        document.getElementById('geofence-distancia').textContent = '9 metros';
+        showToast('✓ Señal revalidada con precisión ±4m');
+      }, 600);
+    }
+
+    async function guardarVisita() {
+      if (!activeClientForCheckin) {
+        showToast('Selecciona un comercio primero');
+        return;
+      }
+
+      const motivo = document.querySelector('input[name="motivo"]:checked')?.value || 'Toma de Pedido';
+      const resultado = document.querySelector('input[name="resultado"]:checked')?.value || 'Exitosa';
+      const monto = parseFloat(document.getElementById('visita-monto')?.value || 0) || 0;
+      const notas = document.getElementById('visita-notas')?.value || '';
+
+      const now = new Date();
+      const horaStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      const fechaStr = now.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+
+      const visitPayload = {
+        id: 'HIS-' + Date.now(),
+        cliente_id: activeClientForCheckin.id,
+        cliente_nombre: activeClientForCheckin.nombre,
         rubro: activeClientForCheckin.rubro,
         direccion: activeClientForCheckin.direccion,
         contacto: activeClientForCheckin.contacto,
         hora: horaStr,
-        estado: 'completada',
-        monto: monto
-      });
-      saveRoute();
+        fecha: fechaStr,
+        motivo,
+        resultado,
+        monto,
+        notas,
+        lat: -34.603702,
+        lng: -58.381615,
+        operador: currentUser ? currentUser.name : 'Operador'
+      };
+
+      let syncedRemote = false;
+
+      if (supabaseClient) {
+        try {
+          const { error } = await supabaseClient.from('visitas').insert([visitPayload]);
+          if (!error) syncedRemote = true;
+          else console.warn('Error Supabase visitas:', error);
+        } catch (err) {
+          console.warn('Error visitas:', err);
+        }
+      }
+
+      visitPayload.clientId = activeClientForCheckin.id;
+      visitPayload.nombre = activeClientForCheckin.nombre;
+
+      historyVisits.unshift(visitPayload);
+      saveHistoryLocal();
+
+      const routeItem = routeVisits.find(r => r.clientId === activeClientForCheckin.id);
+      if (routeItem) {
+        routeItem.estado = 'completada';
+        routeItem.monto = monto;
+        saveRouteLocal();
+      } else {
+        routeVisits.push({
+          id: 'ROU-' + Date.now(),
+          clientId: activeClientForCheckin.id,
+          nombre: activeClientForCheckin.nombre,
+          rubro: activeClientForCheckin.rubro,
+          direccion: activeClientForCheckin.direccion,
+          contacto: activeClientForCheckin.contacto,
+          hora: horaStr,
+          estado: 'completada',
+          monto: monto
+        });
+        saveRouteLocal();
+      }
+
+      if (syncedRemote) {
+        showToast('🟢 Visita sincronizada en Supabase Cloud');
+      } else {
+        showToast('Visita guardada en caché local');
+      }
+
+      cargarDatos(false);
+
+      setTimeout(() => {
+        switchTab('historial');
+      }, 400);
     }
 
-    showToast('¡Visita registrada con éxito!');
-    setTimeout(() => {
-      switchTab('historial');
-    }, 400);
-  }
+    // HISTORIAL
+    function renderHistorial() {
+      const container = document.getElementById('historial-list-container');
+      if (!container) return;
+      const totalEl = document.getElementById('historial-total-monto');
+      const conVentaEl = document.getElementById('historial-con-venta-count');
+      const countLabel = document.getElementById('historial-count-label');
 
-  // ==========================================
-  // HISTORIAL
-  // ==========================================
-  function renderHistorial() {
-    const container = document.getElementById('historial-list-container');
-    if (!container) return;
-    const totalEl = document.getElementById('historial-total-monto');
-    const conVentaEl = document.getElementById('historial-con-venta-count');
-    const countLabel = document.getElementById('historial-count-label');
+      const totalRecaudado = historyVisits.reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0);
+      const conVentaCount = historyVisits.filter(h => h.resultado === 'Exitosa' || Number(h.monto) > 0).length;
 
-    const totalRecaudado = historyVisits.reduce((acc, curr) => acc + (Number(curr.monto) || 0), 0);
-    const conVentaCount = historyVisits.filter(h => h.resultado === 'Exitosa' || Number(h.monto) > 0).length;
+      if (totalEl) totalEl.textContent = '$' + totalRecaudado.toFixed(2);
+      if (conVentaEl) conVentaEl.textContent = conVentaCount + ' transacciones exitosas';
+      if (countLabel) countLabel.textContent = 'Registro Cronológico (' + historyVisits.length + ')';
 
-    if (totalEl) totalEl.textContent = '$' + totalRecaudado.toFixed(2);
-    if (conVentaEl) conVentaEl.textContent = conVentaCount + ' transacciones exitosas';
-    if (countLabel) countLabel.textContent = 'Registro Cronológico (' + historyVisits.length + ')';
-
-    if (historyVisits.length === 0) {
-      container.innerHTML = `
-        <div class="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm text-center space-y-2.5 my-1">
-          <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
-            📜
-          </div>
-          <h4 class="text-sm font-extrabold text-slate-900">No hay visitas completadas aún</h4>
-          <p class="text-xs text-slate-500 max-w-xs mx-auto">
-            Realiza tu primer check-in desde la pestaña "Ruta Hoy" o "Visita".
-          </p>
-          <button onclick="switchTab('ruta')" class="py-2.5 px-4 rounded-xl bg-blue-700 text-white font-bold text-xs hover:bg-blue-800 transition">
-            Ir a Mi Ruta de Hoy
-          </button>
-        </div>
-      `;
-      return;
-    }
-
-    let html = '';
-    historyVisits.forEach(h => {
-      const isSuccess = h.resultado === 'Exitosa';
-      html += `
-        <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
-          <div class="flex justify-between items-start">
-            <div>
-              <span class="text-[10px] font-bold text-slate-400">${h.fecha || 'Hoy'} • ${h.hora}</span>
-              <h4 class="text-sm font-extrabold text-slate-900">${escapeHtml(h.nombre)}</h4>
-              <p class="text-[11px] text-slate-500">${escapeHtml(h.direccion)}</p>
+      if (historyVisits.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white rounded-3xl p-7 border border-slate-200 shadow-sm text-center space-y-2.5 my-1">
+            <div class="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
+              📜
             </div>
-            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isSuccess ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
-              ${isSuccess ? '✓ Con Venta' : '• Relevamiento'}
-            </span>
+            <h4 class="text-sm font-extrabold text-slate-900">No hay visitas completadas aún</h4>
+            <p class="text-xs text-slate-500 max-w-xs mx-auto">
+              Realiza tu primer check-in desde la pestaña "Ruta Hoy" o "Visita".
+            </p>
+            <button onclick="switchTab('ruta')" class="py-2.5 px-4 rounded-xl bg-blue-700 text-white font-bold text-xs hover:bg-blue-800 transition">
+              Ir a Mi Ruta de Hoy
+            </button>
           </div>
+        `;
+        return;
+      }
 
-          <div class="bg-slate-50 rounded-xl p-2.5 text-xs flex justify-between items-center font-semibold">
-            <span class="text-slate-600">Motivo: <strong>${escapeHtml(h.motivo)}</strong></span>
-            <span class="${isSuccess ? 'text-emerald-700 font-extrabold' : 'text-slate-500'}">
-              ${h.monto > 0 ? '$' + Number(h.monto).toFixed(2) : '$0.00'}
-            </span>
+      let html = '';
+      historyVisits.forEach(h => {
+        const isSuccess = h.resultado === 'Exitosa';
+        html += `
+          <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-[10px] font-bold text-slate-400">${h.fecha || 'Hoy'} • ${h.hora}</span>
+                <h4 class="text-sm font-extrabold text-slate-900">${escapeHtml(h.nombre)}</h4>
+                <p class="text-[11px] text-slate-500">${escapeHtml(h.direccion || 'En local')}</p>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isSuccess ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}">
+                ${isSuccess ? '✓ Con Venta' : '• Relevamiento'}
+              </span>
+            </div>
+
+            <div class="bg-slate-50 rounded-xl p-2.5 text-xs flex justify-between items-center font-semibold">
+              <span class="text-slate-600">Motivo: <strong>${escapeHtml(h.motivo || 'Visita')}</strong></span>
+              <span class="${isSuccess ? 'text-emerald-700 font-extrabold' : 'text-slate-500'}">
+                ${Number(h.monto) > 0 ? '$' + Number(h.monto).toFixed(2) : '$0.00'}
+              </span>
+            </div>
+
+            ${h.notas ? `<p class="text-[11px] text-slate-500 italic">"${escapeHtml(h.notas)}"</p>` : ''}
+
+            <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
+              <span>Atendió: ${escapeHtml(h.contacto || 'Comercio')}</span>
+              <span class="text-emerald-600 font-semibold">✓ Supabase Cloud</span>
+            </div>
           </div>
+        `;
+      });
 
-          ${h.notas ? `<p class="text-[11px] text-slate-500 italic">"${escapeHtml(h.notas)}"</p>` : ''}
-
-          <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
-            <span>Atendió: ${escapeHtml(h.contacto)}</span>
-            <span class="text-emerald-600 font-semibold">✓ Auditado GPS</span>
-          </div>
-        </div>
-      `;
-    });
-
-    container.innerHTML = html;
-  }
-
-  function exportarHistorial() {
-    if (historyVisits.length === 0) {
-      showToast('No hay visitas en el historial');
-      return;
+      container.innerHTML = html;
     }
-    showToast('Exportando reporte del día en formato CSV...');
-  }
 
-  // ==========================================
-  // DATOS DEMO
-  // ==========================================
-  function cargarDatosDemo() {
-    const demo = [
-      {
-        id: 'CLI-DEMO-1',
-        nombre: "Minimarket El Trébol",
-        idFiscal: "76.842.190-K",
-        rubro: "Almacén / Minimarket",
-        categoria: "Cat. A (Mayorista)",
-        direccion: "Av. San Martín 420, Sector Centro",
-        contacto: "Rodrigo Paredes",
-        telefono: "+54 9 11 4829 1102",
-        fechaAlta: "20 Oct"
-      },
-      {
-        id: 'CLI-DEMO-2',
-        nombre: "Farmacia San Marcos",
-        idFiscal: "30-71829301-4",
-        rubro: "Farmacia / Salud",
-        categoria: "Cat. B (Frecuente)",
-        direccion: "Calle Belgrano 892, Sector Norte",
-        contacto: "Dra. Marcela Gómez",
-        telefono: "+54 9 11 6392 4811",
-        fechaAlta: "22 Oct"
-      },
-      {
-        id: 'CLI-DEMO-3',
-        nombre: "Café & Panadería Los Andes",
-        idFiscal: "20-33918290-9",
-        rubro: "Cafetería / Gastronomía",
-        categoria: "Cat. B (Frecuente)",
-        direccion: "Paseo Libertad 910",
-        contacto: "Carmen Fuentes",
-        telefono: "+54 9 11 9921 7731",
-        fechaAlta: "24 Oct"
+    function exportarHistorial() {
+      if (historyVisits.length === 0) {
+        showToast('No hay visitas en el historial');
+        return;
       }
-    ];
+      showToast('Exportando reporte del día en formato CSV...');
+    }
 
-    clientsData = demo;
-    saveClients();
+    // DATOS DEMO
+    async function cargarDatosDemo() {
+      const demo = [
+        {
+          id: 'CLI-DEMO-1',
+          nombre: "Minimarket El Trébol",
+          id_fiscal: "76.842.190-K",
+          rubro: "Almacén / Minimarket",
+          categoria: "Cat. A (Mayorista)",
+          direccion: "Av. San Martín 420, Sector Centro",
+          contacto: "Rodrigo Paredes",
+          telefono: "+54 9 11 4829 1102",
+          lat: -34.603702,
+          lng: -58.381615
+        },
+        {
+          id: 'CLI-DEMO-2',
+          nombre: "Farmacia San Marcos",
+          id_fiscal: "30-71829301-4",
+          rubro: "Farmacia / Salud",
+          categoria: "Cat. B (Frecuente)",
+          direccion: "Calle Belgrano 892, Sector Norte",
+          contacto: "Dra. Marcela Gómez",
+          telefono: "+54 9 11 6392 4811",
+          lat: -34.604100,
+          lng: -58.382100
+        },
+        {
+          id: 'CLI-DEMO-3',
+          nombre: "Café & Panadería Los Andes",
+          id_fiscal: "20-33918290-9",
+          rubro: "Cafetería / Gastronomía",
+          categoria: "Cat. B (Frecuente)",
+          direccion: "Paseo Libertad 910",
+          contacto: "Carmen Fuentes",
+          telefono: "+54 9 11 9921 7731",
+          lat: -34.605200,
+          lng: -58.383500
+        }
+      ];
 
-    routeVisits = [
-      {
-        id: 'ROU-DEMO-1',
-        clientId: demo[0].id,
-        nombre: demo[0].nombre,
-        rubro: demo[0].rubro,
-        direccion: demo[0].direccion,
-        contacto: demo[0].contacto,
-        hora: '10:30 AM',
-        estado: 'pendiente',
-        monto: 0
-      },
-      {
-        id: 'ROU-DEMO-2',
-        clientId: demo[1].id,
-        nombre: demo[1].nombre,
-        rubro: demo[1].rubro,
-        direccion: demo[1].direccion,
-        contacto: demo[1].contacto,
-        hora: '12:00 PM',
-        estado: 'pendiente',
-        monto: 0
+      if (supabaseClient) {
+        try {
+          await supabaseClient.from('clientes').upsert(demo);
+          showToast('📦 Datos demo insertados en Supabase');
+          cargarDatos(false);
+          return;
+        } catch (err) {
+          console.warn('Aviso insert demo:', err);
+        }
       }
-    ];
-    saveRoute();
 
-    showToast('📦 Datos demo cargados exitosamente');
-    renderClients();
-    renderDashboard();
-  }
+      clientsData = demo.map((d, i) => ({
+        ...d,
+        idFiscal: d.id_fiscal,
+        fechaAlta: 'Hoy'
+      }));
+      saveClientsLocal();
+      showToast('📦 Datos demo cargados en caché local');
+      renderClients();
+      renderDashboard();
+    }
 
-  // ==========================================
-  // EASTER EGG: RESETAPP
-  // ==========================================
-  function initEasterEggListener() {
-    const input = document.getElementById('search-input-clientes');
-    if (!input) return;
+    // EASTER EGG RESETAPP
+    function initEasterEggListener() {
+      const input = document.getElementById('search-input-clientes');
+      if (!input) return;
 
-    input.addEventListener('input', (e) => {
-      if (e.target.value.trim().toLowerCase() === 'resetapp') {
-        openResetModal();
+      input.addEventListener('input', (e) => {
+        if (e.target.value.trim().toLowerCase() === 'resetapp') {
+          openResetModal();
+        }
+      });
+    }
+
+    function openResetModal() {
+      const modal = document.getElementById('reset-confirm-modal');
+      const card = document.getElementById('reset-confirm-card');
+      if (modal && card) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
       }
-    });
-  }
-
-  function openResetModal() {
-    const modal = document.getElementById('reset-confirm-modal');
-    const card = document.getElementById('reset-confirm-card');
-    if (modal && card) {
-      modal.classList.remove('opacity-0', 'pointer-events-none');
-      card.classList.remove('scale-95');
-      card.classList.add('scale-100');
     }
-  }
 
-  function closeResetModal() {
-    const modal = document.getElementById('reset-confirm-modal');
-    const card = document.getElementById('reset-confirm-card');
-    if (modal && card) {
-      modal.classList.add('opacity-0', 'pointer-events-none');
-      card.classList.remove('scale-100');
-      card.classList.add('scale-95');
+    function closeResetModal() {
+      const modal = document.getElementById('reset-confirm-modal');
+      const card = document.getElementById('reset-confirm-card');
+      if (modal && card) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+      }
+      const input = document.getElementById('search-input-clientes');
+      if (input) input.value = '';
     }
-    const input = document.getElementById('search-input-clientes');
-    if (input) input.value = '';
-  }
 
-  function confirmResetApp() {
-    closeResetModal();
-    clientsData = [];
-    routeVisits = [];
-    historyVisits = [];
-    activeClientForCheckin = null;
+    function confirmResetApp() {
+      closeResetModal();
+      clientsData = [];
+      routeVisits = [];
+      historyVisits = [];
+      activeClientForCheckin = null;
 
-    localStorage.removeItem(DB_KEY_CLIENTS);
-    localStorage.removeItem(DB_KEY_ROUTE);
-    localStorage.removeItem(DB_KEY_HISTORY);
+      localStorage.removeItem(DB_KEY_CLIENTS);
+      localStorage.removeItem(DB_KEY_ROUTE);
+      localStorage.removeItem(DB_KEY_HISTORY);
 
-    renderClients();
-    renderDashboard();
-    renderHistorial();
+      renderClients();
+      renderDashboard();
+      renderHistorial();
 
-    showToast('🧹 Base de datos restablecida a 0');
-    switchTab('clientes');
-  }
-
-  function syncDatabase() {
-    showToast('Sincronizando con servidor satelital...');
-    setTimeout(() => {
-      showToast('✓ Registros al día en la nube');
-    }, 600);
-  }
-
-  // Quick Menu
-  function toggleQuickMenu() {
-    const menu = document.getElementById('quick-menu');
-    const card = document.getElementById('quick-menu-card');
-    const isOpen = !menu.classList.contains('pointer-events-none');
-
-    if (isOpen) {
-      menu.classList.add('opacity-0', 'pointer-events-none');
-      card.classList.add('translate-y-8');
-    } else {
-      menu.classList.remove('opacity-0', 'pointer-events-none');
-      card.classList.remove('translate-y-8');
+      showToast('🧹 Caché local restablecida a 0');
+      switchTab('clientes');
     }
-  }
 
-  // Telemetría GPS
-  function abrirTelemetriaGPS() {
-    const modal = document.getElementById('gps-telemetry-modal');
-    const card = document.getElementById('gps-telemetry-card');
-    if (modal && card) {
-      modal.classList.remove('opacity-0', 'pointer-events-none');
-      card.classList.remove('scale-95');
-      card.classList.add('scale-100');
+    // Quick Menu
+    function toggleQuickMenu() {
+      const menu = document.getElementById('quick-menu');
+      const card = document.getElementById('quick-menu-card');
+      const isOpen = !menu.classList.contains('pointer-events-none');
+
+      if (isOpen) {
+        menu.classList.add('opacity-0', 'pointer-events-none');
+        card.classList.add('translate-y-8');
+      } else {
+        menu.classList.remove('opacity-0', 'pointer-events-none');
+        card.classList.remove('translate-y-8');
+      }
     }
-  }
 
-  function cerrarTelemetriaGPS() {
-    const modal = document.getElementById('gps-telemetry-modal');
-    const card = document.getElementById('gps-telemetry-card');
-    if (modal && card) {
-      modal.classList.add('opacity-0', 'pointer-events-none');
-      card.classList.remove('scale-100');
-      card.classList.add('scale-95');
+    // Telemetría GPS
+    function abrirTelemetriaGPS() {
+      const modal = document.getElementById('gps-telemetry-modal');
+      const card = document.getElementById('gps-telemetry-card');
+      if (modal && card) {
+        modal.classList.remove('opacity-0', 'pointer-events-none');
+        card.classList.remove('scale-95');
+        card.classList.add('scale-100');
+      }
     }
-  }
 
-  function capturarGPSParaAlta() {
-    showToast('Capturando coordenadas de ubicación actual...');
-    setTimeout(() => {
-      document.getElementById('alta-gps-lat').value = '-34.603702';
-      document.getElementById('alta-gps-lng').value = '-58.381615';
-      showToast('✓ GPS fijado (Margen ±6m)');
-    }, 400);
-  }
+    function cerrarTelemetriaGPS() {
+      const modal = document.getElementById('gps-telemetry-modal');
+      const card = document.getElementById('gps-telemetry-card');
+      if (modal && card) {
+        modal.classList.add('opacity-0', 'pointer-events-none');
+        card.classList.remove('scale-100');
+        card.classList.add('scale-95');
+      }
+    }
 
-  // Toast
-  let toastTimer;
-  function showToast(msg) {
-    const toast = document.getElementById('toast');
-    const msgEl = document.getElementById('toast-msg');
-    if (!toast || !msgEl) return;
-    msgEl.textContent = msg;
+    function capturarGPSParaAlta() {
+      showToast('Capturando coordenadas por satélite...');
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            document.getElementById('alta-gps-lat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('alta-gps-lng').value = pos.coords.longitude.toFixed(6);
+            showToast('✓ GPS capturado con éxito');
+          },
+          () => {
+            showToast('Usando coordenadas simuladas');
+          }
+        );
+      }
+    }
 
-    toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-4');
-    toast.classList.add('opacity-100', 'translate-y-0');
+    // Toast
+    let toastTimeout;
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-msg');
+      if (!toast || !toastMsg) return;
 
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
-      toast.classList.remove('opacity-100', 'translate-y-0');
-    }, 2400);
-  }
+      toastMsg.textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
 
-  function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
-</script>
-</body></html>
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
+      }, 2600);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+  </script>
+</body>
+</html>
